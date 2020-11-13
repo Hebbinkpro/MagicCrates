@@ -1,2 +1,7 @@
 # MagicCrates
 Add customizable crates to your server
+
+- Create/remove crates with a simple form
+- Beautiful crate opening animation
+- You can create infinity new crate types
+- Add infinity items/blocks to your crate type with custom names, enchantments and lores
