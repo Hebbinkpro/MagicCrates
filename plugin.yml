@@ -1,0 +1,23 @@
+name: MagicCrates
+description: Add crates to your server
+version: 1.0.0
+main: Hebbinkpro\MagicCrates\Main
+api: 3.14.3
+
+permissions:
+  mc.cmd.use:
+    default: op
+    description: Use the
+  mc.cmd.create:
+    default: op
+    description: Create crates with the command
+  mc.cmd.remove:
+    default: op
+    description: Remove crates with the command
+  mc.cmd.makekey:
+    defautl: op
+    description: Create crate keys
+  mc.break.remove:
+    default: op
+    description: Remove crates when you break them
+
