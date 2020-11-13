@@ -1,5 +1,6 @@
-# MagicCrates
+# MagicCrates [![Poggit-CI](https://poggit.pmmp.io/ci.shield/Hebbinkpro/MagicCrates/MagicCrates)](https://poggit.pmmp.io/ci/Hebbinkpro/MagicCrates/MagicCrates)
 Add customizable crates to your server
+
 
 - Create/remove crates with a simple form
 - Beautiful crate opening animation
