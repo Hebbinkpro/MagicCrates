@@ -1,5 +1,6 @@
 name: MagicCrates
 description: Add crates to your server
+author: Hebbinkpro
 version: 1.0.0
 main: Hebbinkpro\MagicCrates\Main
 api: 3.14.3
