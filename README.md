@@ -11,7 +11,7 @@ Add customizable crates to your server
 ## Commands
 - /mc create
 - /mc remove
-- /mc makekey <crate_type> [player]
+- /mc makekey <crate_type> \[amount] \[player]
 
 ## Additional Information
 This plugin uses [Commando](https://github.com/CortexPE/Commando) and [FormAPI](https://github.com/jojoe77777/FormAPI)
