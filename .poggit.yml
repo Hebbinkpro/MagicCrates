@@ -7,5 +7,5 @@ projects:
     path: ""
     lint:
       phpstan: false
-    icon: MagicCrates.png
+    icon: MagicCrates-icon.png
 ...
