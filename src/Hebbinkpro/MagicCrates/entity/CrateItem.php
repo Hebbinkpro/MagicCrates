@@ -130,12 +130,12 @@ class CrateItem extends Entity
 					$owner->getInventory()->addItem($this->item);
 					$give ++;
 				}
-				//set crate to closed
-				$this->main->openCrates[$this->crateKey] = false;
 
 				$owner->sendMessage("[§6Magic§cCrates§r] §aYou won §e".$this->getNameTag());
-
 			}
+			
+			//set crate to closed
+			$this->main->openCrates[$this->crateKey] = false;
 		}
 
 		return $hasUpdate;
