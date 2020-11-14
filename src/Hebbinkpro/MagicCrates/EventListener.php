@@ -113,6 +113,14 @@ class EventListener implements Listener
 				$key->setCustomName("§e" . $crateType . " §r§dCrate Key");
 				$key->setLore(["§6Magic§cCrates §7Key - " . $crateType]);
 				$key->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::UNBREAKING), 1));
+				
+				//check if a new reward can be add
+				if(!$player->getInventory()->canAddItem(new Item(298,0))){
+					$player->sendMessage("[§6Magic§cCrates§r] §cYour inventory is full, come back later when your inventory is cleared!");
+					$e->setCancelled();
+					return;
+				}
+				
 				//remove the key from the inventory
 				$player->getInventory()->removeItem($key);
 
