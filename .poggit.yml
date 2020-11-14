@@ -5,4 +5,7 @@ branches:
 projects:
   MagicCrates:
     path: ""
+    lint:
+      phpstan: false
+    icon: MagicCrates.png
 ...
