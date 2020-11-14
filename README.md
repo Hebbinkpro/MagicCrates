@@ -20,9 +20,10 @@ poggit: [![](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pm
 ## Permissions
 | Permission | Description | Default |
 |  --- | --- | --- |
-| mc.cmd.create | Access tot the `/mc create` command | OP |
-| mc.cmd.remove | Access tot the `/mc remove` command | OP |
-| mc.cmd.makekey | Access tot the `/mc makekey` command | OP |
+| mc.cmd | Access to the `/mc` command | OP |
+| mc.cmd.create | Access to the `/mc create` command | OP |
+| mc.cmd.remove | Access to the `/mc remove` command | OP |
+| mc.cmd.makekey | Access to the `/mc makekey` command | OP |
 | mc.break.remove | Permission to remove a crate by break it | OP |
 
 ## Usage

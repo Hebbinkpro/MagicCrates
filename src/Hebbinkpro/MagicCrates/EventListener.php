@@ -3,20 +3,16 @@
 
 namespace Hebbinkpro\MagicCrates;
 
-use Hebbinkpro\MagicCrates\entity\CrateItem;
 use Hebbinkpro\MagicCrates\forms\CrateForm;
 use Hebbinkpro\MagicCrates\tasks\CreateEntityTask;
-use Hebbinkpro\MagicCrates\tasks\OpenCrateTask;
 use pocketmine\Player;
 use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\ItemIds;
-use pocketmine\block\BlockIds;
 use pocketmine\block\Chest;
 use pocketmine\block\Block;
 use pocketmine\item\Item;
 use pocketmine\entity\Entity;
-use pocketmine\entity\object\ItemEntity;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\inventory\InventoryPickupItemEvent;
@@ -24,7 +20,6 @@ use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\math\Vector3;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\entity\EntityLevelChangeEvent;
-use pocketmine\level\particle\FloatingTextParticle;
 
 class EventListener implements Listener
 {

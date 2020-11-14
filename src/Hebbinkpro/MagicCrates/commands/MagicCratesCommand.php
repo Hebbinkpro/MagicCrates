@@ -7,7 +7,6 @@ use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreate;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemove;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateKey;
 
-use CortexPE\Commando\args\BaseArgument;
 use CortexPE\Commando\BaseCommand;
 
 use pocketmine\command\CommandSender;
@@ -19,7 +18,7 @@ class MagicCratesCommand extends BaseCommand
     {
     	$this->setAliases(["mc"]);
 
-    	$this->setPermission("mc.cmd.use");
+    	$this->setPermission("mc.cmd");
 
     	$this->registerSubCommand(new CrateCreate("create", "Create a crate"));
 		$this->registerSubCommand(new CrateRemove("remove", "Remove a crate"));

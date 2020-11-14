@@ -9,7 +9,6 @@ use pocketmine\event\Event;
 
 use jojoe77777\FormAPI\ModalForm;
 use jojoe77777\FormAPI\CustomForm;
-use jojoe77777\FormAPI\SimpleForm;
 
 use pocketmine\Player;
 

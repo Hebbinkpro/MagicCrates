@@ -4,22 +4,10 @@
 namespace Hebbinkpro\MagicCrates\entity;
 
 use Hebbinkpro\MagicCrates\Main;
-use pocketmine\block\Water;
 use pocketmine\entity\Entity;
-use pocketmine\event\entity\ItemDespawnEvent;
-use pocketmine\event\entity\ItemSpawnEvent;
-use pocketmine\event\inventory\InventoryPickupItemEvent;
 use pocketmine\item\Item;
-use pocketmine\math\AxisAlignedBB;
-use pocketmine\nbt\tag\ListTag;
-use pocketmine\network\mcpe\protocol\ActorEventPacket;
 use pocketmine\network\mcpe\protocol\AddItemActorPacket;
-use pocketmine\network\mcpe\protocol\TakeItemActorPacket;
 use pocketmine\Player;
-
-use pocketmine\level\Level;
-use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\math\Vector3;
 
 use function get_class;
 

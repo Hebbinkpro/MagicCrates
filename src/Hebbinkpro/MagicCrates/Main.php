@@ -9,8 +9,6 @@ use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 use CortexPE\Commando\PacketHooker;
 use CortexPE\Commando\exception\HookAlreadyRegistered;
 
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
 use pocketmine\event\Listener;
 use pocketmine\level\Level;
 use pocketmine\Player;

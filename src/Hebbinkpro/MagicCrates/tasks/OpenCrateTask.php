@@ -6,12 +6,10 @@ namespace Hebbinkpro\MagicCrates\tasks;
 use Hebbinkpro\MagicCrates\entity\CrateItem;
 
 use pocketmine\entity\Entity;
-use pocketmine\entity\object\ItemEntity;
 use pocketmine\item\enchantment\Enchantment;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\Item;
 use pocketmine\level\Level;
-use pocketmine\item\ItemIds;
 use pocketmine\math\Vector3;
 
 class OpenCrateTask
