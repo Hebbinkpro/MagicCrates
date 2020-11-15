@@ -151,5 +151,39 @@ class Main extends PluginBase implements Listener {
 
 	}
 
+	public function sendCommands(string $crateType, Player $player, Item $reward, int $count = 1){
+
+		$types = $this->getConfig()->get("types");
+		if(!isset($types[$crateType])){
+			return;
+		}
+		$type = $types[$crateType];
+
+		if(!isset($type["commands"])){
+			return;
+		}
+
+		foreach($type["commands"] as $cmd){
+			$cmd = str_replace("{player}", $player->getName(), $cmd);
+			$cmd = str_replace("{crate}", $crateType . " crate", $cmd);
+			if($count > 1){
+				if($reward->hasCustomName()){
+					$cmd = str_replace("{reward}", $reward->getCustomName() . " ".$count."x", $cmd);
+				}
+				$cmd = str_replace("{reward}", $reward->getName() . " ".$count."x", $cmd);
+			}else{
+				if($reward->hasCustomName()){
+					$cmd = str_replace("{reward}", $reward->getCustomName(), $cmd);
+				}
+				$cmd = str_replace("{reward}", $reward->getName(), $cmd);
+			}
+
+
+			$this->getServer()->dispatchCommand(new ConsoleCommandSender(), $cmd);
+		}
+
+
+	}
+
 
 }

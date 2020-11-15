@@ -107,23 +107,34 @@ class CrateItem extends Entity
 		if($this->isFlaggedForDespawn() and !$this->pickup and $this->owner != ""){
 			$owner = $this->main->getServer()->getPlayer($this->owner);
 
-			if($owner instanceof Player and $owner->getInventory()->canAddItem($this->item)){
+			if($owner instanceof Player){
 				$this->pickup = true;
-				$lore = $this->item->getLore();
-				$key = array_search("§7Pickup: §cfalse", $lore);
-				unset($lore[$key]);
-				$this->item->setLore($lore);
-				$give = 0;
-				while($give < $this->count){
-					$owner->getInventory()->addItem($this->item);
-					$give ++;
+
+				if($owner->getInventory()->canAddItem($this->item)) {
+					$lore = $this->item->getLore();
+					$key = array_search("§7Pickup: §cfalse", $lore);
+					unset($lore[$key]);
+					$this->item->setLore($lore);
+					$give = 0;
+					while ($give < $this->count) {
+						$owner->getInventory()->addItem($this->item);
+						$give++;
+					}
+
+					$owner->sendMessage("[§6Magic§cCrates§r] §aYou won §e" . $this->getNameTag());
+				}
+				elseif(!$owner->getInventory()->canAddItem($this->item)){
+					$owner->sendMessage("[§6Magic§cCrates§r] §cYour inventory is full");
 				}
 
-				$owner->sendMessage("[§6Magic§cCrates§r] §aYou won §e".$this->getNameTag());
+				//execute commands
+				$crates = $this->main->crates->get("crates");
+				$this->main->sendCommands($crates[$this->crateKey]["type"], $owner, $this->item, $this->count);
 			}
-			
+
 			//set crate to closed
 			$this->main->openCrates[$this->crateKey] = false;
+
 		}
 
 		return $hasUpdate;

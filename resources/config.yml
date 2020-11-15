@@ -1,6 +1,10 @@
 #delay: The delay before the item animation begins
 #types: your crate types
 #every type needs the following format, you can add as much as you want types, items and item enchantments
+#for commands you can use the following formatting:
+# - {player} for the player
+# - {reward} for the reward
+# - {crate} for the crate type
 #The item change is the change to get that item from the crate
 #   <type>:
 #     name: <the text that appears above the created crates>
@@ -14,6 +18,11 @@
 #           - id: <enchantment_id>
 #             level: <echantment_level>
 #         change: <the change to get the item>
+#     commands:
+#       - <command>
+#       - <second command>
+#       - etc...
+
 
 delay: 1
 types:
@@ -35,3 +44,6 @@ types:
         amount: 2
         lore: Pure Garbage
         change: 10
+    commands:
+      - say {player} won {reward} from a {crate}
+      - givemoney {player} 100
