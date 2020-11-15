@@ -8,6 +8,7 @@ poggit: [![](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pm
 - No Chest menu, but a beautiful animation instead when you open a crate
 - You can create infinity custom crate types
 - Add infinity items to your crate type with custom names, enchantments and lores
+- Add infinity commands that execute when a crate is opend
 - Open crates with keys
 
 ## Commands
