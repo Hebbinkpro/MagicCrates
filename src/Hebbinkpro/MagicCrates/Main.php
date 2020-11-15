@@ -127,7 +127,13 @@ class Main extends PluginBase implements Listener {
 					$level = $player->getLevel();
 					$level->addParticle($particle, [$player]);
 				}else{
+					if(!$this->getServer()->isLevelLoaded($crate["level"])){
+						continue;
+					}
 					$level = $this->getServer()->getLevelByName($crate["level"]);
+					if(is_null($level)){
+						continue;
+					}
 					$level->addParticle($particle);
 				}
 			}
