@@ -126,7 +126,13 @@ class Main extends PluginBase implements Listener {
 					$level = $player->getLevel();
 					$level->addParticle($particle, [$player]);
 				}else{
+					if(!$this->getServer()->isLevelLoaded($crate["level"])){
+						continue;
+					}
 					$level = $this->getServer()->getLevelByName($crate["level"]);
+					if(is_null($level)){
+						continue;
+					}
 					$level->addParticle($particle);
 				}
 			}
@@ -137,13 +143,20 @@ class Main extends PluginBase implements Listener {
 		$levels = $this->getServer()->getLevels();
 		$particles = $this->particles;
 		foreach ($particles as $crate) {
-			$level = $this->getServer()->getLevelByName($crate["level"]);
-			$particle = $crate["particle"];
-			if ($particle instanceof FloatingTextParticle) {
+			if($particle instanceof FloatingTextParticle){
+
 				$particle->setInvisible(true);
 				if($player != null){
+					$level = $player->getLevel();
 					$level->addParticle($particle, [$player]);
 				}else{
+					if(!$this->getServer()->isLevelLoaded($crate["level"])){
+						continue;
+					}
+					$level = $this->getServer()->getLevelByName($crate["level"]);
+					if(is_null($level)){
+						continue;
+					}
 					$level->addParticle($particle);
 				}
 			}
