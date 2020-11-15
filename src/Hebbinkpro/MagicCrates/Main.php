@@ -8,7 +8,7 @@ use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 
 use CortexPE\Commando\PacketHooker;
 use CortexPE\Commando\exception\HookAlreadyRegistered;
-
+use pocketmine\item\Item;
 use pocketmine\event\Listener;
 use pocketmine\level\Level;
 use pocketmine\Player;
@@ -16,6 +16,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\entity\Entity;
 use pocketmine\level\particle\FloatingTextParticle;
+use pocketmine\command\ConsoleCommandSender;
 use pocketmine\math\Vector3;
 
 class Main extends PluginBase implements Listener {
@@ -126,13 +127,7 @@ class Main extends PluginBase implements Listener {
 					$level = $player->getLevel();
 					$level->addParticle($particle, [$player]);
 				}else{
-					if(!$this->getServer()->isLevelLoaded($crate["level"])){
-						continue;
-					}
 					$level = $this->getServer()->getLevelByName($crate["level"]);
-					if(is_null($level)){
-						continue;
-					}
 					$level->addParticle($particle);
 				}
 			}
@@ -143,6 +138,7 @@ class Main extends PluginBase implements Listener {
 		$levels = $this->getServer()->getLevels();
 		$particles = $this->particles;
 		foreach ($particles as $crate) {
+			$particle = $crate["particle"];
 			if($particle instanceof FloatingTextParticle){
 
 				$particle->setInvisible(true);
@@ -197,6 +193,5 @@ class Main extends PluginBase implements Listener {
 
 
 	}
-
 
 }
