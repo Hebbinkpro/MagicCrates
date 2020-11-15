@@ -29,11 +29,11 @@ types:
   common:
     name: §eCommon §6Crate
     rewards:
-      - name: Diamantje
+      - name: Diamond
         id: 388
         meta: 0
         amount: 1
-        lore: Super zeldzaam diamantje
+        lore: Special Diamond
         enchantments:
           - name: efficiency
             level: 500
@@ -42,8 +42,8 @@ types:
         id: 3
         meta: 1
         amount: 2
-        lore: Pure Garbage
+        lore: Garbage
         change: 10
     commands:
-      - say {player} won {reward} from a {crate}
+      - say {player} won {reward} from na {crate}
       - givemoney {player} 100
