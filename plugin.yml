@@ -1,29 +1,29 @@
 name: MagicCrates
 description: Add crates to your server
 author: Hebbinkpro
-version: 1.0.6
+version: 1.0.8
 main: Hebbinkpro\MagicCrates\Main
 api: 3.14.2
-mcpe-protocol: [389,390,407,408]
+mcpe-protocol: [389,390,407,408,419]
 
 permissions:
-  mc.cmd.*:
+  magiccrates.cmd:
     default: op
-    description: Access to the /mc command
+    description: Access to the /magiccrates command
     children:
-      mc.cmd.create:
+      magiccrates.cmd.create:
         default: op
-        description: 	Access to the /mc create command
-      mc.cmd.remove:
+        description: 	Access to the /magiccrates create command
+      magiccrates.cmd.remove:
         default: op
-        description: Access to the /mc remove command
-      mc.cmd.makekey:
+        description: Access to the /magiccrates remove command
+      magiccrates.cmd.makekey:
         default: op
-        description: 	Access to the /mc makekey command
-  mc.break.*:
+        description: 	Access to the /magiccrates makekey command
+  magiccrates.break:
     default: false
     children:
-      mc.break.remove:
+      magiccrates.break.remove:
         default: op
-        description: Permission to remove a crate by break it
+        description: Permission to remove a crate by breaking it
 

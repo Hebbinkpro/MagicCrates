@@ -12,31 +12,32 @@ poggit: [![](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pm
 - Open crates with keys
 
 ## Commands
+Command aliases: /magiccrates, /magiccrates
 | Command | Description | Permission |
 | --- | --- | --- |
-| /mc create | Create a crate | mc.cmd.create |
-| /mc remove | Remove a crate | mc.cmd.remove |
-| /mc makekey <crate_type> \[amount] \[player] | Make a crate key | mc.cmd.makekey |
+| /magiccrates create | Create a crate | magiccrates.cmd.create |
+| /magiccrates remove | Remove a crate | magiccrates.cmd.remove |
+| /magiccrates makekey <crate_type> \[amount] \[player] | Make a crate key | magiccrates.cmd.makekey |
 
 ## Permissions
 | Permission | Description | Default |
 |  --- | --- | --- |
-| mc.cmd | Access to the `/mc` command | OP |
-| mc.cmd.create | Access to the `/mc create` command | OP |
-| mc.cmd.remove | Access to the `/mc remove` command | OP |
-| mc.cmd.makekey | Access to the `/mc makekey` command | OP |
-| mc.break.remove | Permission to remove a crate by break it | OP |
+| magiccrates.cmd | Access to the `/magiccrates` command | OP |
+| magiccrates.cmd.create | Access to the `/magiccrates create` command | OP |
+| magiccrates.cmd.remove | Access to the `/magiccrates remove` command | OP |
+| magiccrates.cmd.makekey | Access to the `/magiccrates makekey` command | OP |
+| magiccrates.break.remove | Permission to remove a crate by breaking it | OP |
 
 ## Usage
 ### Create crate
-1. Use the command `/mc create`
+1. Use the command `/magiccrates create`
 2. Click on the chest where you your crate want
 3. Select the crate type in the dropdown menu and click submit
 4. Click **save crate**
 
 ### Remove crate
 #### By command
-1. Use the command `/mc remove`
+1. Use the command `/magiccrates remove`
 2. Click the crate you want to delete
 3. Click **Delete crate**
 #### By block breaking
@@ -45,7 +46,7 @@ poggit: [![](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pm
 
 ### Use crate
 #### Create key
-0. Create a crate key with te command `/mc makekey <crate_type> \[amount] \[player]`
+0. Create a crate key with te command `/magiccrates makekey <crate_type> \[amount] \[player]`
 #### Open crate
 1. Click on a crate with the crate key for that crate type
 2. Watch the animation
