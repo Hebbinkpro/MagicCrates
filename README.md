@@ -2,7 +2,7 @@
 
 Add customizable crates to your server
 
-poggit: [![](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)[![Poggit-CI](https://poggit.pmmp.io/ci.shield/Hebbinkpro/MagicCrates/MagicCrates)](https://poggit.pmmp.io/ci/Hebbinkpro/MagicCrates/MagicCrates) 
+poggit: [![](https://poggit.pmmp.io/shield.api/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)[![](https://poggit.pmmp.io/shield.dl.total/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
 - Create and remove crates with a simple form
 - No Chest menu, but a beautiful animation instead when you open a crate
@@ -51,6 +51,11 @@ Command aliases: /magiccrates, /magiccrates
 1. Click on a crate with the crate key for that crate type
 2. Watch the animation
 3. You received the item(s) in your inventory
+
+## Working on
+- Adding more options for command rewards
+- Piggy custom enchants support
+- One time rewards
 
 ## Additional Information
 - This plugin uses [Commando](https://github.com/CortexPE/Commando) and [FormAPI](https://github.com/jojoe77777/FormAPI)
