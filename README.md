@@ -46,15 +46,14 @@ Command aliases: /magiccrates, /magiccrates
 
 ### Use crate
 #### Create key
-0. Create a crate key with te command `/magiccrates makekey <crate_type> \[amount] \[player]`
+0. Create a crate key with te command `/magiccrates makekey <crate_type> [amount] [player]`
 #### Open crate
 1. Click on a crate with the crate key for that crate type
 2. Watch the animation
 3. You received the item(s) in your inventory
 
 ## Working on
-- Adding more options for command rewards
-- Piggy custom enchants support
+- Adding more options for rewards
 - One time rewards
 
 ## Additional Information
