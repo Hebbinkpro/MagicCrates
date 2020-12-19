@@ -3,6 +3,7 @@
 
 namespace Hebbinkpro\MagicCrates;
 
+use DaPigGuy\PiggyCustomEnchants\CustomEnchantManager;
 use Hebbinkpro\MagicCrates\forms\CrateForm;
 use Hebbinkpro\MagicCrates\tasks\CreateEntityTask;
 use pocketmine\Player;
@@ -96,28 +97,24 @@ class EventListener implements Listener
 					return;
 				}
 			}
-			
+
 			if($item->getId() === ItemIds::PAPER ){
 				if(!in_array("§6Magic§cCrates §7Key - " . $crateType, $item->getLore()) or $item->getCustomName() != "§e" . $crateType . " §r§dCrate Key"){
 					$player->sendMessage("[§6Magic§cCrates§r] §cUse a crate key to open this §e$crateType §r§ccrate");
 					$e->setCancelled();
 					return;
 				}
-				//create the key
-				$key = new Item(ItemIds::PAPER);
-				$key->setCustomName("§e" . $crateType . " §r§dCrate Key");
-				$key->setLore(["§6Magic§cCrates §7Key - " . $crateType]);
-				$key->addEnchantment(new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::UNBREAKING), 1));
-				
+
 				//check if a new reward can be add
 				if(!$player->getInventory()->canAddItem(new Item(298,0))){
 					$player->sendMessage("[§6Magic§cCrates§r] §cYour inventory is full, come back later when your inventory is cleared!");
 					$e->setCancelled();
 					return;
 				}
-				
-				//remove the key from the inventory
-				$player->getInventory()->removeItem($key);
+
+				//remove item
+				$item->setCount(1);
+				$player->getInventory()->removeItem($item);
 
 			}else{
 				$player->sendMessage("[§6Magic§cCrates§r] §cUse a crate key to open this §e$crateType §r§ccrate");
@@ -162,25 +159,35 @@ class EventListener implements Listener
 			$item = new Item($id, $meta, $name);
 			$item->setCustomName($name);
 			$item->setLore([$lore, "\n§a$crateType §r§6Crate", "§7Pickup: §cfalse"]);
+
+			$ce = $this->main->getServer()->getPluginManager()->getPlugin("PiggyCustomEnchants");
 			foreach ($enchantments as $ench){
-				$ename = $ench["name"];
+				$eName = $ench["name"];
 				$lvl = intval($ench["level"]);
-				$enchantment = Enchantment::getEnchantmentByName($ename);
+
+				// get enchantment
+				$enchantment = Enchantment::getEnchantmentByName($eName);
+				// if enchantment doesn't exists in pmmp, check if it's a PiggyCustomEnchant (if piggycustomenchants exists as plugin in your server)
+				if(is_null($enchantment) and !is_null($ce) and $ce->isEnabled()){
+					$enchantment = CustomEnchantManager::getEnchantmentByName($eName);
+				}
+
+				// apply enchantment
 				if($enchantment instanceof Enchantment){
                     $item->addEnchantment(new EnchantmentInstance($enchantment, $lvl));
                 }
 			}
 
-			//create spawn position
+			// create spawn position
 			$spawnX = $bX + 0.5;
 			$spawnY = $bY + 1;
 			$spawnZ = $bZ + 0.5;
 			$spawnPos = new Vector3($spawnX, $spawnY, $spawnZ);
 
-			//set crate in opening state
+			// set crate in opening state
 			$this->main->openCrates[$crateKey] = $player->getName();
 
-			//create nbt
+			// create nbt
 			$itemTag = $item->nbtSerialize();
 			$itemTag->setName("Item");
 			$nbt= Entity::createBaseNBT($spawnPos);
@@ -193,12 +200,15 @@ class EventListener implements Listener
 			$nbt->setShort("CrateKey", $crateKey);
 			$nbt->setTag($itemTag);
 
-			//create entity
+			// create entity
 			$delay = $this->config->get("delay") * 20;
 			if(!is_int($delay)){
 				$delay = 0;
 			}
+
+			// open crate
 			$this->main->getScheduler()->scheduleDelayedTask(new CreateEntityTask($name, $bLevel, $nbt, $count), $delay);
+			$player->sendMessage("§eYou are opening a $crateType crate...");
 
 			$e->setCancelled();
 		}
