@@ -1,15 +1,19 @@
-# MagicCrates
+# MagicCrates [![](https://poggit.pmmp.io/shield.dl.total/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
 Add customizable crates to your server
 
-poggit: [![](https://poggit.pmmp.io/shield.api/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)[![](https://poggit.pmmp.io/shield.dl.total/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
+## Downloads
+#### Stable release: [![](https://poggit.pmmp.io/shield.api/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
+#### Newest release: [Poggit CI](https://poggit.pmmp.io/ci/Hebbinkpro/MagicCrates/MagicCrates)
 
+## Information
 - Create and remove crates with a simple form
 - No Chest menu, but a beautiful animation instead when you open a crate
 - You can create infinity custom crate types
 - Add infinity items to your crate type with custom names, enchantments and lores
 - Add infinity commands that execute when a crate is opend
 - Open crates with keys
+- PiggyCustomEnchants support
 
 ## Commands
 Command aliases: /magiccrates, /magiccrates
