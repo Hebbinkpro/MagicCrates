@@ -4,7 +4,7 @@ author: Hebbinkpro
 version: 1.1.0
 main: Hebbinkpro\MagicCrates\Main
 api: 3.14.2
-mcpe-protocol: [407,408,419,422]
+mcpe-protocol: [407,408,419,422,471]
 
 permissions:
   magiccrates.cmd:
