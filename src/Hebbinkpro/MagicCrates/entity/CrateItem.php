@@ -4,166 +4,164 @@
 namespace Hebbinkpro\MagicCrates\entity;
 
 use Hebbinkpro\MagicCrates\Main;
+use Hebbinkpro\MagicCrates\utils\CrateUtils;
 use pocketmine\entity\Entity;
+use pocketmine\entity\EntitySizeInfo;
 use pocketmine\item\Item;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\AddItemActorPacket;
-use pocketmine\Player;
-
-use function get_class;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
+use pocketmine\player\Player;
 
 class CrateItem extends Entity
 {
-	public const NETWORK_ID = self::ITEM;
+    public float $width = 0.25;
+    public float $height = 0.25;
+    public bool $canCollide = false;
+    protected string $owner;
+    protected bool $pickup = false;
+    protected Item $item;
+    protected float $baseOffset = 0.125;
+    protected float $spawnY;
+    protected int $count;
+    protected int $crateKey;
+    protected int $age = 0;
+    protected array $rewardCommands;
 
-	/** @var string */
-	protected $owner = "";
+    public static function getNetworkTypeId(): string
+    {
+        return EntityIds::ITEM;
+    }
 
-	/** @var bool */
-	protected $pickup = false;
+    public function entityBaseTick(int $tickDiff = 1): bool
+    {
+        if ($this->closed) return false;
 
-	/** @var Item */
-	protected $item;
+        $hasUpdate = parent::entityBaseTick($tickDiff);
 
-	public $width = 0.25;
-	public $height = 0.25;
-	protected $baseOffset = 0.125;
+        if (!$this->isFlaggedForDespawn() and $this->isAlive()) {
+            $y = $this->getLocation()->getY();
 
-	public $canCollide = false;
+            if (($y - $this->spawnY) < 1.1) {
+                $this->setNameTagAlwaysVisible(false);
+                $this->getLocation()->pitch = rad2deg(-pi() / 2);
+                $this->move(0, 0.05, 0);
+            }
+            if (($y - $this->spawnY) >= 1.1 and $this->age < 100) {
+                $this->setNameTagAlwaysVisible();
+                $this->move(0, 0, 0);
+            }
+            $this->age += $tickDiff;
+            if ($this->age >= 100) {
+                $this->flagForDespawn();
+            }
 
-	protected $spawnX = 0.5;
-	protected $spawnY = 1;
-	protected $spawnZ = 0.5;
+        }
 
-	protected $count = 1;
-	protected $crateKey;
-	protected $delay = 0;
+        if ($this->isFlaggedForDespawn() and !$this->pickup and $this->owner !== "") {
+            $owner = Main::getInstance()->getServer()->getPlayerByPrefix($this->owner);
 
-	/** @var int */
-	protected $age = 0;
+            if ($owner instanceof Player) {
+                $this->pickup = true;
 
-	private $main;
+                if ($owner->getInventory()->canAddItem($this->item)) {
+                    $lore = $this->item->getLore();
+                    $key = array_search("§7Pickup: §cfalse", $lore);
+                    unset($lore[$key]);
+                    $this->item->setLore($lore);
+                    $give = 0;
+                    while ($give < $this->count) {
+                        $owner->getInventory()->addItem($this->item);
+                        $give++;
+                    }
 
-	protected function initEntity() : void{
-		$this->main = Main::getInstance();
+                    $owner->sendMessage(Main::prefix() . " §aYou won §e" . $this->getNameTag());
+                } else $owner->sendMessage(Main::prefix() . " §cYour inventory is full");
 
-		parent::initEntity();
+                $crates = Main::getInstance()->crates->get("crates");
+                $crateType = $crates[$this->crateKey]["type"];
+                $crateData = Main::getInstance()->getConfig()->get("types")[$crateType];
 
-		$this->setMaxHealth(5);
-		$this->setImmobile(true);
+                if (isset($crateData["commands"])) CrateUtils::sendCommands($crateData["commands"], $crateType, $owner, $this->item, $this->count);
+                CrateUtils::sendCommands($this->rewardCommands, $crateType, $owner, $this->item, $this->count);
+            }
 
-		$this->setHealth($this->namedtag->getShort("Health", (int) $this->getHealth()));
-		$this->age = $this->namedtag->getShort("Age", $this->age);
-		$this->owner = $this->namedtag->getString("Owner", $this->owner);
-		$this->spawnX = $this->namedtag->getShort("SpawnX", $this->spawnX);
-		$this->spawnY = $this->namedtag->getShort("SpawnY", $this->spawnY);
-		$this->spawnZ = $this->namedtag->getShort("SpawnZ", $this->spawnZ);
-		$this->count = $this->namedtag->getShort("ItemCount", $this->count);
-		$this->crateKey = $this->namedtag->getShort("CrateKey", $this->crateKey);
-		if($this->count < 1) $this->count = 1;
+            unset(Main::getInstance()->openCrates[$this->crateKey]);
+        }
 
-		$itemTag = $this->namedtag->getCompoundTag("Item");
-		if($itemTag === null){
-			throw new \UnexpectedValueException("Invalid " . get_class($this) . " entity: expected \"CrateItem\" NBT tag not found");
-		}
+        return $hasUpdate;
+    }
 
-		$this->item = Item::nbtDeserialize($itemTag);
-		if($this->item->isNull()){
-			throw new \UnexpectedValueException("CrateItem for " . get_class($this) . " is invalid");
-		}
+    public function saveNBT(): CompoundTag
+    {
+        $nbt = parent::saveNBT();
+        $nbt->setTag("Item", $this->item->nbtSerialize());
+        $nbt->setShort("Health", (int)$this->getHealth());
+        $nbt->setShort("Age", $this->age);
+        $nbt->setString("Owner", $this->owner);
+        $nbt->setShort("SpawnY", $this->spawnY);
+        $nbt->setShort("ItemCount", $this->count);
+        $nbt->setShort("CrateKey", $this->crateKey);
+        $nbt->setString("RewardCommands", json_encode($this->rewardCommands));
 
+        return $nbt;
+    }
 
-		//(new ItemSpawnEvent($this))->call();
-	}
+    protected function getInitialSizeInfo(): EntitySizeInfo
+    {
+        return new EntitySizeInfo(0.25, 0.25);
+    }
 
-	public function entityBaseTick(int $tickDiff = 1) : bool{
-		if($this->closed){
-			return false;
-		}
+    protected function initEntity(CompoundTag $nbt): void
+    {
+        parent::initEntity($nbt);
 
-		$hasUpdate = parent::entityBaseTick($tickDiff);
+        $this->age = $nbt->getShort("Age", 0);
+        $this->owner = $nbt->getString("Owner");
+        $this->spawnY = $nbt->getShort("SpawnY");
+        $this->count = $nbt->getShort("ItemCount");
+        $this->crateKey = $nbt->getShort("CrateKey");
+        $this->rewardCommands = json_decode($nbt->getString("RewardCommands"));
+        if ($this->count < 1) $this->count = 1;
 
-		if(!$this->isFlaggedForDespawn() and $this->isAlive()){
+        $itemTag = $nbt->getCompoundTag("Item");
+        $this->item = Item::nbtDeserialize($itemTag);
+    }
 
-			$x = $this->getX();
-			$y = $this->getY();
-			$z = $this->getZ();
+    protected function tryChangeMovement(): void
+    {
+        $this->checkObstruction($this->getLocation()->x, $this->getLocation()->y, $this->getLocation()->z);
+        parent::tryChangeMovement();
+    }
 
-			if(($y - $this->spawnY) < 1.1){
-				$this->setNameTagAlwaysVisible(false);
-				$this->pitch = rad2deg(-pi() / 2);
-				$this->move(0,0.05,0);
-			}
-			if(($y - $this->spawnY) >= 1.1 and $this->age < 100){
-				$this->setNameTagAlwaysVisible(true);
-				$this->move(0,0,0);
-			}
-			$this->age += $tickDiff;
-			if($this->age >= 100){
-				$this->flagForDespawn();
-			}
+    protected function sendSpawnPacket(Player $player): void
+    {
+        $networkSession = $player->getNetworkSession();
 
-		}
+        $networkSession->sendDataPacket(AddItemActorPacket::create(
+            $this->getId(), //TODO: entity unique ID
+            $this->getId(),
+            ItemStackWrapper::legacy($networkSession->getTypeConverter()->coreItemStackToNet($this->getItem())),
+            $this->location->asVector3(),
+            $this->getMotion(),
+            $this->getAllNetworkData(),
+            false //TODO: I have no idea what this is needed for, but right now we don't support fishing anyway
+        ));
+    }
 
-		if($this->isFlaggedForDespawn() and !$this->pickup and $this->owner != ""){
-			$owner = $this->main->getServer()->getPlayer($this->owner);
+    public function getItem(): Item
+    {
+        return $this->item;
+    }
 
-			if($owner instanceof Player){
-				$this->pickup = true;
+    protected function getInitialDragMultiplier(): float
+    {
+        return 0;
+    }
 
-				if($owner->getInventory()->canAddItem($this->item)) {
-					$lore = $this->item->getLore();
-					$key = array_search("§7Pickup: §cfalse", $lore);
-					unset($lore[$key]);
-					$this->item->setLore($lore);
-					$give = 0;
-					while ($give < $this->count) {
-						$owner->getInventory()->addItem($this->item);
-						$give++;
-					}
-
-					$owner->sendMessage("[§6Magic§cCrates§r] §aYou won §e" . $this->getNameTag());
-				}
-				elseif(!$owner->getInventory()->canAddItem($this->item)){
-					$owner->sendMessage("[§6Magic§cCrates§r] §cYour inventory is full");
-				}
-
-				//execute commands
-				$crates = $this->main->crates->get("crates");
-				$this->main->sendCommands($crates[$this->crateKey]["type"], $owner, $this->item, $this->count);
-			}
-
-			//set crate to closed
-			$this->main->openCrates[$this->crateKey] = false;
-
-		}
-
-		return $hasUpdate;
-	}
-
-	protected function tryChangeMovement() : void{
-		$this->checkObstruction($this->x, $this->y, $this->z);
-		parent::tryChangeMovement();
-	}
-
-	public function saveNBT() : void{
-		parent::saveNBT();
-		$this->namedtag->setTag($this->item->nbtSerialize(-1, "CrateItem"));
-		$this->namedtag->setShort("Health", (int) $this->getHealth());
-	}
-
-	public function getItem() : Item{
-		return $this->item;
-	}
-
-	protected function sendSpawnPacket(Player $player) : void{
-		$pk = new AddItemActorPacket();
-		$pk->entityRuntimeId = $this->getId();
-		$pk->position = $this->asVector3();
-		$pk->motion = $this->getMotion();
-		$pk->item = $this->getItem();
-		$pk->metadata = $this->propertyManager->getAll();
-
-		$player->dataPacket($pk);
-	}
-
+    protected function getInitialGravity(): float
+    {
+        return 0;
+    }
 }

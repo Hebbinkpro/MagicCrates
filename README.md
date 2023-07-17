@@ -9,11 +9,10 @@ Add customizable crates to your server
 ## Information
 - Create and remove crates with a simple form
 - No Chest menu, but a beautiful animation instead when you open a crate
-- You can create infinity custom crate types
-- Add infinity items to your crate type with custom names, enchantments and lores
-- Add infinity commands that execute when a crate is opend
+- You can create infinite custom crate types
+- Add infinity items to your crate type with custom names, enchantments and lore's
+- Add infinity commands that execute when a crate is opened
 - Open crates with keys
-- PiggyCustomEnchants support
 
 ## Commands
 Command aliases: /magiccrates, /magiccrates
@@ -56,9 +55,9 @@ Command aliases: /magiccrates, /magiccrates
 2. Watch the animation
 3. You received the item(s) in your inventory
 
-## Working on
+## TO DO
 - Adding more options for rewards
 - One time rewards
 
 ## Additional Information
-- This plugin uses [Commando](https://github.com/CortexPE/Commando) and [FormAPI](https://github.com/jojoe77777/FormAPI)
+- This plugin uses [Commando](https://github.com/CortexPE/Commando) and [FormsUI](https://github.com/Vecnavium/FormsUI)

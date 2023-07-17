@@ -3,201 +3,78 @@
 
 namespace Hebbinkpro\MagicCrates;
 
-use Hebbinkpro\MagicCrates\entity\CrateItem;
-use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 
-use CortexPE\Commando\PacketHooker;
 use CortexPE\Commando\exception\HookAlreadyRegistered;
-use pocketmine\item\Item;
-use pocketmine\event\Listener;
-use pocketmine\level\Level;
-use pocketmine\Player;
+use CortexPE\Commando\PacketHooker;
+use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
+use Hebbinkpro\MagicCrates\entity\CrateItem;
+use Hebbinkpro\MagicCrates\utils\FloatingTextUtils;
+use JsonException;
+use pocketmine\entity\EntityDataHelper;
+use pocketmine\entity\EntityFactory;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
-use pocketmine\entity\Entity;
-use pocketmine\level\particle\FloatingTextParticle;
-use pocketmine\command\ConsoleCommandSender;
-use pocketmine\math\Vector3;
+use pocketmine\world\World;
 
-class Main extends PluginBase implements Listener {
+class Main extends PluginBase
+{
+    public static self $instance;
+    public Config $crates;
+    public array $createCrates = [];
+    public array $removeCrates = [];
+    public array $openCrates = [];
+    public array $particles = [];
 
-	public $config;
-	public $crates;
-	public static $instance;
+    public static function prefix(): string
+    {
+        return "[§6Magic§cCrates§r]";
+    }
 
-	public $createCrates = [];
-	public $removeCrates = [];
-	public $openCrates = [];
+    public function onLoad(): void
+    {
+        EntityFactory::getInstance()->register(CrateItem::class, function (World $world, CompoundTag $nbt): CrateItem {
+            return new CrateItem(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+        }, ['CrateItem']);
+    }
 
-	public $particles = [];
+    public static function getInstance(): self
+    {
+        return self::$instance;
+    }
 
-	public static function getInstance(){
-		return self::$instance;
-	}
+    /**
+     * @throws HookAlreadyRegistered
+     */
+    public function onEnable(): void
+    {
+        self::$instance = $this;
 
-	public function onEnable(){
-		self::$instance = $this;
+        if (!PacketHooker::isRegistered()) PacketHooker::register($this);
 
-		if(!PacketHooker::isRegistered()) {
-			try {
-				PacketHooker::register($this);
-			} catch (HookAlreadyRegistered $e) {
-			}
-		}
+        $this->saveResource("config.yml");
 
-		Entity::registerEntity(CrateItem::class, true, ["CrateItem"]);
-
-		$this->saveResource("config.yml");
-		$this->config = new Config($this->getDataFolder() . "config.yml", Config::YAML);
-		$this->crates = new Config($this->getDataFolder() . "crates.yml", Config::YAML, [
-		    "crates" => []
+        $this->crates = new Config($this->getDataFolder() . "crates.yml", Config::YAML, [
+            "crates" => []
         ]);
 
-		//register events
-		$this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
 
-		//register command
-		$this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic Crates Command"));
+        $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command"));
 
+        FloatingTextUtils::initParticles();
+    }
 
-		$this->initParticles();
-
-		//var_dump($this->particles);
-	}
-
-	public function reloadCrates(){
-		$this->crates->reload();
-	}
-
-	public function initParticles(){
-		$this->particles = [];
-
-		foreach ($this->crates->get("crates") as $key=>$crate){
-			$pos = new Vector3($crate["x"] + 0.5, $crate["y"] + 1, $crate["z"] + 0.5);
-			$level = $crate["level"];
-			$types = $this->getConfig()->get("types");
-			if(isset($types[$crate["type"]]["name"])){
-				$title = $types[$crate["type"]]["name"];
-				if(!is_string($title)){
-					$title = $crate["type"] . " crate";
-				}
-			}else{
-				$title = $crate["type"] . " crate";
-			}
-			$particle = new FloatingTextParticle($pos, "", $title);
-			$this->particles[$key] = [
-				"particle" => $particle,
-				"level" => $level
-			];
-
-		}
-	}
-
-	public function onDisable(){
-		$this->crates->save();
-		foreach($this->getServer()->getLevels() as $level){
-			foreach($level->getEntities() as $entity){
-				if($entity instanceof CrateItem){
-					$entity->flagForDespawn();
-				}
-			}
-		}
-
-		$this->disableAllParticles();
-	}
-
-	public function loadAllParticles(?Player $player = null, $lev = null){
-		if($player != null){
-			$this->disableAllParticles($player);
-		}else{
-			$this->disableAllParticles();
-		}
-		$this->reloadCrates();
-		$this->initParticles();
-		if($lev instanceof Level){
-			$level = $lev->getName();
-		}
-		$particles = $this->particles;
-		foreach($particles as $crate){
-			$particle = $crate["particle"];
-			if($particle instanceof FloatingTextParticle){
-
-				$particle->setInvisible(false);
-				if($player != null){
-					$level = $player->getLevel();
-					$level->addParticle($particle, [$player]);
-				}else{
-					if(!$this->getServer()->isLevelLoaded($crate["level"])){
-						continue;
-					}
-					$level = $this->getServer()->getLevelByName($crate["level"]);
-					if(is_null($level)){
-						continue;
-					}
-					$level->addParticle($particle);
-				}
-			}
-		}
-	}
-
-	public function disableAllParticles(?Player $player = null){
-		$levels = $this->getServer()->getLevels();
-		$particles = $this->particles;
-		foreach ($particles as $crate) {
-			$particle = $crate["particle"];
-			if($particle instanceof FloatingTextParticle){
-
-				$particle->setInvisible(true);
-				if($player != null){
-					$level = $player->getLevel();
-					$level->addParticle($particle, [$player]);
-				}else{
-					if(!$this->getServer()->isLevelLoaded($crate["level"])){
-						continue;
-					}
-					$level = $this->getServer()->getLevelByName($crate["level"]);
-					if(is_null($level)){
-						continue;
-					}
-					$level->addParticle($particle);
-				}
-			}
-		}
-
-	}
-
-	public function sendCommands(string $crateType, Player $player, Item $reward, int $count = 1){
-
-		$types = $this->getConfig()->get("types");
-		if(!isset($types[$crateType])){
-			return;
-		}
-		$type = $types[$crateType];
-
-		if(!isset($type["commands"])){
-			return;
-		}
-
-		foreach($type["commands"] as $cmd){
-			$cmd = str_replace("{player}", $player->getName(), $cmd);
-			$cmd = str_replace("{crate}", $crateType . " crate", $cmd);
-			if($count > 1){
-				if($reward->hasCustomName()){
-					$cmd = str_replace("{reward}", $reward->getCustomName() . " ".$count."x", $cmd);
-				}
-				$cmd = str_replace("{reward}", $reward->getName() . " ".$count."x", $cmd);
-			}else{
-				if($reward->hasCustomName()){
-					$cmd = str_replace("{reward}", $reward->getCustomName(), $cmd);
-				}
-				$cmd = str_replace("{reward}", $reward->getName(), $cmd);
-			}
-
-
-			$this->getServer()->dispatchCommand(new ConsoleCommandSender(), $cmd);
-		}
-
-
-	}
-
+    /**
+     * @throws JsonException
+     */
+    public function onDisable(): void
+    {
+        $this->crates->save();
+        foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
+            foreach ($world->getEntities() as $entity) {
+                if ($entity instanceof CrateItem) $entity->flagForDespawn();
+            }
+        }
+    }
 }

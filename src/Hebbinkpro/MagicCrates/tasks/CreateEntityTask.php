@@ -4,39 +4,27 @@
 namespace Hebbinkpro\MagicCrates\tasks;
 
 use Hebbinkpro\MagicCrates\entity\CrateItem;
-use Hebbinkpro\MagicCrates\Main;
-
-use pocketmine\entity\Entity;
-use pocketmine\level\Level;
+use pocketmine\entity\EntityDataHelper;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\scheduler\Task;
+use pocketmine\world\World;
 
 class CreateEntityTask extends Task
 {
-	private $name;
-	private $level;
-	private $nbt;
-	private $count;
-
-	public function __construct(string $name, Level $level, CompoundTag $nbt, int $count = 1)
-	{
-		$this->name = $name;
-		$this->level = $level;
-		$this->nbt = $nbt;
-		$this->count = $count;
-	}
-
-	public function onRun(int $currentTick)
+    public function __construct(private string $name, private World $world, private CompoundTag $nbt, private int $count = 1)
     {
-		$itemEntity = Entity::createEntity("CrateItem", $this->level, $this->nbt);
 
-		if($itemEntity instanceof CrateItem){
-			$itemEntity->setNameTag($this->name);
-			if($this->count > 1){
-				$itemEntity->setNameTag($this->name . " §r§6$this->count" . "x");
-			}
+    }
 
-			$itemEntity->spawnToAll();
-		}
+    public function onRun(): void
+    {
+        $itemEntity = new CrateItem(EntityDataHelper::parseLocation($this->nbt, $this->world), $this->nbt);
+
+        if ($itemEntity instanceof CrateItem) {
+            if ($this->count > 1) $itemEntity->setNameTag($this->name . " §r§6$this->count" . "x");
+            else $itemEntity->setNameTag($this->name);
+
+            $itemEntity->spawnToAll();
+        }
     }
 }
