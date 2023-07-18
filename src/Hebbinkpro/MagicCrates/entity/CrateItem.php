@@ -3,31 +3,33 @@
 
 namespace Hebbinkpro\MagicCrates\entity;
 
-use Hebbinkpro\MagicCrates\Main;
-use Hebbinkpro\MagicCrates\utils\CrateUtils;
+use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\crate\CrateReward;
+use Hebbinkpro\MagicCrates\crate\CrateType;
+use Hebbinkpro\MagicCrates\event\CrateRewardEvent;
+use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\entity\Entity;
 use pocketmine\entity\EntitySizeInfo;
-use pocketmine\item\Item;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\AddItemActorPacket;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\player\Player;
+use pocketmine\Server;
+use pocketmine\world\Position;
 
 class CrateItem extends Entity
 {
     public float $width = 0.25;
     public float $height = 0.25;
-    public bool $canCollide = false;
-    protected string $owner;
-    protected bool $pickup = false;
-    protected Item $item;
-    protected float $baseOffset = 0.125;
-    protected float $spawnY;
-    protected int $count;
-    protected int $crateKey;
     protected int $age = 0;
-    protected array $rewardCommands;
+
+    protected string $owner;
+    protected float $spawnY;
+
+    protected Crate $crate;
+    protected CrateType $crateType;
+    protected CrateReward $reward;
 
     public static function getNetworkTypeId(): string
     {
@@ -59,35 +61,21 @@ class CrateItem extends Entity
 
         }
 
-        if ($this->isFlaggedForDespawn() and !$this->pickup and $this->owner !== "") {
-            $owner = Main::getInstance()->getServer()->getPlayerByPrefix($this->owner);
+        if ($this->isFlaggedForDespawn()) {
+            $owner = Server::getInstance()->getPlayerExact($this->owner);
 
             if ($owner instanceof Player) {
-                $this->pickup = true;
 
-                if ($owner->getInventory()->canAddItem($this->item)) {
-                    $lore = $this->item->getLore();
-                    $key = array_search("§7Pickup: §cfalse", $lore);
-                    unset($lore[$key]);
-                    $this->item->setLore($lore);
-                    $give = 0;
-                    while ($give < $this->count) {
-                        $owner->getInventory()->addItem($this->item);
-                        $give++;
-                    }
+                $owner->getInventory()->addItem($this->reward->getItem());
+                $owner->sendMessage(MagicCrates::PREFIX . " §aYou won §e" . $this->getNameTag());
 
-                    $owner->sendMessage(Main::prefix() . " §aYou won §e" . $this->getNameTag());
-                } else $owner->sendMessage(Main::prefix() . " §cYour inventory is full");
-
-                $crates = Main::getInstance()->crates->get("crates");
-                $crateType = $crates[$this->crateKey]["type"];
-                $crateData = Main::getInstance()->getConfig()->get("types")[$crateType];
-
-                if (isset($crateData["commands"])) CrateUtils::sendCommands($crateData["commands"], $crateType, $owner, $this->item, $this->count);
-                CrateUtils::sendCommands($this->rewardCommands, $crateType, $owner, $this->item, $this->count);
+                $this->crateType->executeCommands($owner, $this->reward);
             }
 
-            unset(Main::getInstance()->openCrates[$this->crateKey]);
+            (new CrateRewardEvent($this->crate, $owner, $this->reward))->call();
+            $this->crate->setOpener(null);
+            $this->crate->showFloatingText();
+
         }
 
         return $hasUpdate;
@@ -96,14 +84,13 @@ class CrateItem extends Entity
     public function saveNBT(): CompoundTag
     {
         $nbt = parent::saveNBT();
-        $nbt->setTag("Item", $this->item->nbtSerialize());
-        $nbt->setShort("Health", (int)$this->getHealth());
-        $nbt->setShort("Age", $this->age);
-        $nbt->setString("Owner", $this->owner);
-        $nbt->setShort("SpawnY", $this->spawnY);
-        $nbt->setShort("ItemCount", $this->count);
-        $nbt->setShort("CrateKey", $this->crateKey);
-        $nbt->setString("RewardCommands", json_encode($this->rewardCommands));
+
+        $nbt->setShort("age", $this->age);
+        $nbt->setString("owner", $this->owner);
+        $nbt->setFloat("spawn-y", $this->spawnY);
+        $nbt->setString("crate-pos", serialize($this->crate->getPos()->asVector3()));
+        $nbt->setString("crate-type", $this->crateType->getId());
+        $nbt->setString("reward", $this->reward->getName());
 
         return $nbt;
     }
@@ -117,16 +104,13 @@ class CrateItem extends Entity
     {
         parent::initEntity($nbt);
 
-        $this->age = $nbt->getShort("Age", 0);
-        $this->owner = $nbt->getString("Owner");
-        $this->spawnY = $nbt->getShort("SpawnY");
-        $this->count = $nbt->getShort("ItemCount");
-        $this->crateKey = $nbt->getShort("CrateKey");
-        $this->rewardCommands = json_decode($nbt->getString("RewardCommands"));
-        if ($this->count < 1) $this->count = 1;
+        $this->age = $nbt->getShort("age", 0);
+        $this->owner = $nbt->getString("owner");
+        $this->spawnY = $nbt->getFloat("spawn-y");
 
-        $itemTag = $nbt->getCompoundTag("Item");
-        $this->item = Item::nbtDeserialize($itemTag);
+        $this->crate = Crate::getByPosition(Position::fromObject(unserialize($nbt->getString("crate-pos")), $this->getWorld()));
+        $this->crateType = CrateType::getById($nbt->getString("crate-type"));
+        $this->reward = $this->crateType->getRewardByName($nbt->getString("reward"));
     }
 
     protected function tryChangeMovement(): void
@@ -142,17 +126,12 @@ class CrateItem extends Entity
         $networkSession->sendDataPacket(AddItemActorPacket::create(
             $this->getId(), //TODO: entity unique ID
             $this->getId(),
-            ItemStackWrapper::legacy($networkSession->getTypeConverter()->coreItemStackToNet($this->getItem())),
+            ItemStackWrapper::legacy($networkSession->getTypeConverter()->coreItemStackToNet($this->reward->getItem())),
             $this->location->asVector3(),
             $this->getMotion(),
             $this->getAllNetworkData(),
             false //TODO: I have no idea what this is needed for, but right now we don't support fishing anyway
         ));
-    }
-
-    public function getItem(): Item
-    {
-        return $this->item;
     }
 
     protected function getInitialDragMultiplier(): float

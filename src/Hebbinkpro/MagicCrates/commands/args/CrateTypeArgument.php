@@ -3,7 +3,7 @@
 namespace Hebbinkpro\MagicCrates\commands\args;
 
 use CortexPE\Commando\args\StringEnumArgument;
-use Hebbinkpro\MagicCrates\utils\CrateUtils;
+use Hebbinkpro\MagicCrates\crate\CrateType;
 use pocketmine\command\CommandSender;
 
 class CrateTypeArgument extends StringEnumArgument
@@ -31,7 +31,7 @@ class CrateTypeArgument extends StringEnumArgument
     public function getEnumValues(): array
     {
         $values = [];
-        foreach (CrateUtils::getCrateTypes() as $type) {
+        foreach (CrateType::getAllTypeIds() as $type) {
             $values[$type] = $type;
         }
         return $values;

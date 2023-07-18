@@ -4,52 +4,45 @@
 namespace Hebbinkpro\MagicCrates\utils;
 
 
-use Hebbinkpro\MagicCrates\Main;
+use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\crate\CrateType;
+use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\player\Player;
-use pocketmine\utils\Config;
+use pocketmine\world\Position;
 use Vecnavium\FormsUI\CustomForm;
 use Vecnavium\FormsUI\ModalForm;
 
 class CrateForm
 {
-    private Main $plugin;
+    private MagicCrates $plugin;
+    private Position $pos;
 
-    private Config $crates;
 
-    private array $types = [];
+    private ?CrateType $type = null;
 
-    private ?string $type = null;
-    private Config $config;
-
-    public function __construct(private int $x, private int $y, private int $z, private string $world)
+    public function __construct(MagicCrates $plugin, Position $pos)
     {
-        $this->plugin = Main::getInstance();
-
-        $this->config = $this->plugin->getConfig();
-        $this->crates = $this->plugin->crates;
-
-        //set types in array
-        foreach ($this->config->get("types") as $key => $crateType) {
-            $this->types[] = $key;
-        }
+        $this->plugin = $plugin;
+        $this->pos = $pos;
     }
 
     public function sendCreateForm(Player $player): void
     {
+        $types = CrateType::getAllTypeIds();
 
-        $form = new CustomForm(function (Player $player, $data) {
+        $form = new CustomForm(function (Player $player, $data) use ($types) {
 
             if (isset($data)) {
-                $this->type = $this->types[$data[1]];
+                $this->type = CrateType::getById($types[$data[1]]);
                 $this->submitCreate($player);
             }
 
         });
 
-        $form->setTitle(Main::prefix() . " §r - Create crate");
+        $form->setTitle(MagicCrates::PREFIX . " §r - Create crate");
 
         $form->addLabel("Select the crate type for the new crate");
-        $form->addDropdown("Crate type", $this->types);
+        $form->addDropdown("Crate type", $types);
 
         $player->sendForm($form);
 
@@ -59,81 +52,52 @@ class CrateForm
     {
         $form = new ModalForm(function (Player $player, $data) {
             if (isset($data)) {
-                unset($this->plugin->createCrates[$player->getName()]);
                 switch ($data) {
                     case false:
-                        $player->sendMessage(Main::prefix() . " §aCrate creation is cancelled");
+                        $player->sendMessage(MagicCrates::PREFIX . " §aCrate creation is cancelled");
                         break;
 
                     case true:
-                        $player->sendMessage(Main::prefix() . " §aThe crate is created");
-                        $crates = $this->crates->get("crates");
-                        $crates[] = [
-                            "x" => $this->x,
-                            "y" => $this->y,
-                            "z" => $this->z,
-                            "world" => $this->world,
-                            "type" => $this->type
-                        ];
-                        $this->crates->set("crates", $crates);
-                        $this->crates->save();
-                        $this->crates->reload();
-
-                        CrateUtils::reloadCrates();
-                        FloatingTextUtils::loadAllParticles($player);
+                        $crate = new Crate($this->pos, $this->type);
+                        $crate->showFloatingText();
+                        $player->sendMessage(MagicCrates::PREFIX . " §aThe {$crate->getType()->getName()}§r§a crate is created");
+                        $this->plugin->saveCrates();
                         break;
                     default:
-                        $player->sendMessage(Main::prefix() . " §aCrate creation is cancelled");
+                        $player->sendMessage(MagicCrates::PREFIX . " §aCrate creation is cancelled");
                 }
 
             }
         });
 
-        $form->setTitle(Main::prefix() . " §r - Create crate");
+        $form->setTitle(MagicCrates::PREFIX . " §r - Create crate");
 
-        $form->setContent("The $this->type §rcrate will be created on $this->x, $this->y, $this->z in the world $this->world.\nClick §asave§r to save the crate, or click §cCancel§r to cancel the action");
-        $form->setButton1("Save crate");
-        $form->setButton2("§cCancel");
+        $form->setContent("Are you sure you want to create a §e{$this->type->getId()}§r crate?\n\nClick §asave§r to save the crate, or click §eCancel§r to cancel.");
+        $form->setButton1("§aSave");
+        $form->setButton2("§eCancel");
 
         $player->sendForm($form);
     }
 
     public function sendRemoveForm(Player $player): void
     {
+        $crate = Crate::getByPosition($this->pos);
 
-        $form = new ModalForm(function (Player $player, $data) {
+        $form = new ModalForm(function (Player $player, $data) use ($crate) {
             if (isset($data)) {
                 switch ($data) {
 
                     case true:
+                        $crate->remove();
+                        $crate->hideFloatingText();
+                        $this->plugin->saveCrates();
 
-                        unset($this->plugin->removeCrates[$player->getName()]);
+                        $player->sendMessage(MagicCrates::PREFIX . " §aThe §e{$crate->getType()->getId()} §r§acrate is removed");
 
-                        $crateKey = null;
-                        $crateType = null;
-                        $crateList = $this->crates->get("crates");
-
-                        foreach ($crateList as $key => $crate) {
-                            if ($crate["x"] === $this->x and $crate["y"] === $this->y and $crate["z"] === $this->z and $crate["world"] === $this->world) {
-                                $crateKey = $key;
-                                $crateType = $crate["type"];
-                            }
-                        }
-
-                        unset($crateList[$crateKey]);
-
-                        $this->crates->set("crates", $crateList);
-                        $this->crates->save();
-                        $this->crates->reload();
-                        $player->sendMessage(Main::prefix() . " §aThe §e$crateType §r§acrate is removed");
-
-                        CrateUtils::reloadCrates();
-                        FloatingTextUtils::loadAllParticles();
                         break;
 
                     case false:
-                        $player->sendMessage(Main::prefix() . " §aThe crate isn't removed");
-                        unset($this->plugin->removeCrates[$player->getName()]);
+                        $player->sendMessage(MagicCrates::PREFIX . " §aThe crate isn't removed");
                         break;
 
                     default:
@@ -142,11 +106,11 @@ class CrateForm
             }
         });
 
-        $form->setTitle(Main::prefix() . " §r - Create crate");
+        $form->setTitle(MagicCrates::PREFIX . " §r - Create crate");
 
-        $form->setContent("Do you want to delete the §e$this->type §rcrate on $this->x, $this->y, $this->z in the world $this->world?\nClick §aDelete§r to delete the crate, or click §cCancel§r to cancel this action");
-        $form->setButton1("Delete crate");
-        $form->setButton2("§cCancel");
+        $form->setContent("Do you want to delete this §e{$crate->getType()->getId()}§r crate?\n\nClick §cDelete§r to delete the crate, or click §eCancel§r to cancel.");
+        $form->setButton1("§cDelete");
+        $form->setButton2("§eCancel");
 
         $player->sendForm($form);
     }

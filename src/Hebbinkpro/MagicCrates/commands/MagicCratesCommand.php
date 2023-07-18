@@ -4,7 +4,6 @@
 namespace Hebbinkpro\MagicCrates\commands;
 
 use CortexPE\Commando\BaseCommand;
-use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreate;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateKey;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemove;
@@ -20,9 +19,6 @@ class MagicCratesCommand extends BaseCommand
         $sender->sendMessage("- /mc makekey => Make a create key");
     }
 
-    /**
-     * @throws ArgumentOrderException
-     */
     protected function prepare(): void
     {
         $this->setAliases(["mc"]);

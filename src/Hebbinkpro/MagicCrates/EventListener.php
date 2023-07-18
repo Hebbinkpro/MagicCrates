@@ -3,38 +3,35 @@
 
 namespace Hebbinkpro\MagicCrates;
 
-use Hebbinkpro\MagicCrates\tasks\CreateEntityTask;
+use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
+use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\CrateForm;
-use Hebbinkpro\MagicCrates\utils\CrateUtils;
 use Hebbinkpro\MagicCrates\utils\EntityUtils;
-use Hebbinkpro\MagicCrates\utils\FloatingTextUtils;
+use Hebbinkpro\MagicCrates\utils\PlayerData;
 use pocketmine\block\Chest;
+use pocketmine\block\tile\Chest as TileChest;
 use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\entity\EntityItemPickupEvent;
+use pocketmine\event\block\ChestPairEvent;
 use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\item\enchantment\Enchantment;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\VanillaEnchantments;
+use pocketmine\item\Item;
 use pocketmine\item\ItemTypeIds;
-use pocketmine\item\StringToItemParser;
 use pocketmine\item\VanillaItems;
-use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\utils\Config;
+use pocketmine\world\Position;
 
 class EventListener implements Listener
 {
+    private MagicCrates $plugin;
+    private int $delay;
 
-    private Main $plugin;
-    private Config $config;
-
-    public function __construct()
+    public function __construct(MagicCrates $plugin)
     {
-        $this->plugin = Main::getInstance();
-        $this->config = $this->plugin->getConfig();
+        $this->plugin = $plugin;
+        $this->delay = $plugin->getConfig()->get("delay");
     }
 
     public function onInteractChest(PlayerInteractEvent $e): void
@@ -43,168 +40,169 @@ class EventListener implements Listener
         $block = $e->getBlock();
         $item = $e->getItem();
 
-        if (!$block instanceof Chest) return;
+        // when block isn't a chest or when it's a left click interaction return
+        if (!$block instanceof Chest || $e->getAction() == PlayerInteractEvent::LEFT_CLICK_BLOCK) return;
 
-        $x = $block->getPosition()->getFloorX();
-        $y = $block->getPosition()->getFloorY();
-        $z = $block->getPosition()->getFloorZ();
-        $world = $block->getPosition()->getWorld();
+        $pos = $block->getPosition();
 
-        $crateType = CrateUtils::getCrateType($block);
+        // get the chest tile
+        $tile = $pos->getWorld()->getTile($pos);
+        // the crate isn't a TileChest, or it's a double chest
+        if (!$tile instanceof TileChest) return;
+
+
+        $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+
+        if ($tile->isPaired() && $playerAction > MagicCrates::ACTION_NONE) {
+            $player->sendMessage(MagicCrates::PREFIX . "§c You cannot interact with a paired chest!");
+            $e->cancel();
+            return;
+        }
+
+        $crate = Crate::getByPosition($block->getPosition());
 
         // check if player is creating a crate
-        if (isset($this->plugin->createCrates[$player->getName()])) {
+        if ($playerAction == MagicCrates::ACTION_CRATE_CREATE) {
+            $this->createCrate($player, $crate, $pos);
             $e->cancel();
-
-            if (is_null($crateType)) {
-                $form = new CrateForm($x, $y, $z, $world->getFolderName());
-                $form->sendCreateForm($player);
-                return;
-            }
-
-            $player->sendMessage(Main::prefix() . " §cThis crate is already registerd");
             return;
         }
 
         // check if player is removing a crate
-        if (isset($this->plugin->removeCrates[$player->getName()])) {
+        if ($playerAction == MagicCrates::ACTION_CRATE_REMOVE) {
+            $this->removeCrate($player, $crate);
             $e->cancel();
-
-            if (!is_null($crateType)) {
-                $form = new CrateForm($x, $y, $z, $world->getFolderName());
-                $form->sendRemoveForm($player);
-                return;
-            }
-
-            $player->sendMessage(Main::prefix() . " §cThis chest isn't a crate");
             return;
         }
 
-        if (is_null($crateType)) return;
+        if ($crate !== null) {
+            $this->openCrate($player, $crate, $item);
+            $e->cancel();
+        }
+    }
 
-        $e->cancel();
 
-        $crateKey = CrateUtils::getCrateKey($block);
-        if (isset($this->plugin->openCrates[$crateKey])) {
-            $user = $this->plugin->openCrates[$crateKey];
-            $player->sendMessage(Main::prefix() . " §cYou have to wait. §e$user §r§cis opening a crate");
+    private function createCrate(Player $player, ?Crate $crate, Position $pos): void
+    {
+
+        if ($crate !== null) {
+            $player->sendMessage(MagicCrates::PREFIX . " §cThere is already a crate on this position.");
             return;
         }
 
-        if ($item->getTypeId() != ItemTypeIds::PAPER) {
-            $player->sendMessage(Main::prefix() . " §cUse a crate key to open this §e$crateType §r§ccrate");
+        PlayerData::getInstance()->setInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+
+        $form = new CrateForm($this->plugin, $pos);
+        $form->sendCreateForm($player);
+    }
+
+    private function removeCrate(Player $player, ?Crate $crate): void
+    {
+
+        if ($crate === null) {
+            $player->sendMessage(MagicCrates::PREFIX . " §cThere is no crate on this position.");
             return;
         }
 
-        if (!in_array("§6Magic§cCrates §7Key - " . $crateType, $item->getLore()) or $item->getCustomName() != "§e" . $crateType . " §r§dCrate Key") {
-            $player->sendMessage(Main::prefix() . " §cUse a crate key to open this §e$crateType §r§ccrate");
+        PlayerData::getInstance()->setInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+
+        $form = new CrateForm($this->plugin, $crate->getPos());
+        $form->sendRemoveForm($player);
+    }
+
+    private function openCrate(Player $player, Crate $crate, Item $item): void
+    {
+
+        if ($crate->isOpen()) {
+            $playerName = $crate->getOpener()->getName();
+            $player->sendMessage(MagicCrates::PREFIX . " §cYou have to wait, §e$playerName §r§cis opening the crate");
+            return;
+        }
+
+        $type = $crate->getType();
+        $typeId = $type->getId();
+
+
+        if ($item->getTypeId() != ItemTypeIds::PAPER || $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") !== $typeId) {
+            $player->sendMessage(MagicCrates::PREFIX . " §cUse a §e$typeId §r§ccrate key to open this crate");
             return;
         }
 
         if (!$player->getInventory()->canAddItem(VanillaItems::PAPER())) {
-            $player->sendMessage(Main::prefix() . " §cYour inventory is full, come back later when your inventory is cleared!");
+            $player->sendMessage(MagicCrates::PREFIX . " §cYour inventory is full, come back later when your inventory is cleared!");
             return;
         }
 
         $item->pop();
+        $player->getInventory()->setItemInHand($item);
 
-        $crate = CrateUtils::getCrateContent($crateType);
-        if (is_null($crate)) {
-            $player->sendMessage(Main::prefix() . " §cSomething went wrong");
-            return;
-        }
+        $reward = $crate->getType()->getRandomReward();
 
-        $reward = CrateUtils::getReward($crate["rewards"]);
-        if (is_null($reward)) {
-            $player->sendMessage(Main::prefix() . " §cSomething went wrong");
-            return;
-        }
-
-
-        $rewardItem = $reward["item"];
-        $item = StringToItemParser::getInstance()->parse($rewardItem["id"]);
-
-        $name = $rewardItem["name"] ?? $item->getName();
-        if (isset($rewardItem["name"])) $item->setCustomName($name);
-
-        $count = $rewardItem["amount"] ?? 0;
-
-        $lore = $rewardItem["lore"] ?? "";
-        $item->setLore([$lore, "\n§a$crateType §r§6Crate", "§7Pickup: §cfalse"]);
-
-        if (isset($rewardItem["enchantments"])) {
-            foreach ($rewardItem["enchantments"] as $enchArray) {
-                $ench = VanillaEnchantments::getAll()[strtoupper($enchArray["name"])] ?? null;
-                if ($ench instanceof Enchantment)
-                    $item->addEnchantment(new EnchantmentInstance($ench, intval($enchArray["level"])));
-            }
-        }
-
-        $commands = [];
-        if (isset($reward["commands"])) $commands = $reward["commands"];
-
-        $spawnPos = new Vector3($x + 0.5, $y + 1, $z + 0.5);
+        $pos = $crate->getPos();
+        $spawnPos = $pos->add(0.5, 1, 0.5);
 
         $nbt = EntityUtils::createBaseNBT($spawnPos);
-        $nbt->setString("Owner", $player->getName());
-        $nbt->setShort("SpawnY", $spawnPos->getY());
-        $nbt->setShort("ItemCount", $count);
-        $nbt->setShort("CrateKey", $crateKey);
-        $nbt->setString("RewardCommands", json_encode($commands));
-        $nbt->setTag("Item", $item->nbtSerialize());
+        $nbt->setString("owner", $player->getName());
+        $nbt->setFloat("spawn-y", $spawnPos->getY());
+        $nbt->setString("crate-pos", serialize($pos->asVector3()));
+        $nbt->setString("crate-type", $type->getId());
+        $nbt->setString("reward", $reward->getName());
 
-        $delay = $this->config->get("delay") * 20;
+        $delay = $this->delay * 20;
         if (!is_int($delay)) $delay = 0;
 
-        $player->sendMessage("§eYou are opening a $crateType crate...");
-        $this->plugin->openCrates[$crateKey] = $player->getName();
+        $player->sendMessage(MagicCrates::PREFIX . " §eYou are opening a §6$typeId §ecrate...");
+        $crate->setOpener($player);
+        $crate->hideFloatingText();
 
-        $this->plugin->getScheduler()->scheduleDelayedTask(new CreateEntityTask($name, $world, $nbt, $count), $delay);
-    }
+        (new CrateOpenEvent($crate, $player))->call();
 
-    public function onPickup(EntityItemPickupEvent $e): void
-    {
-        $item = $e->getItem();
-        if (in_array("§7Pickup: §cfalse", $item->getLore())) $e->cancel();
+        $this->plugin->getScheduler()->scheduleDelayedTask(new StartCrateAnimationTask($crate, $reward, $nbt), $delay);
     }
 
     public function onBlockBreak(BlockBreakEvent $e): void
     {
         $player = $e->getPlayer();
         $block = $e->getBlock();
-        if ($this->plugin->createCrates[$player->getName()]) {
-            $player->sendMessage(Main::prefix() . " §cYou can't break blocks while creating a crate");
+        $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+
+        if ($playerAction > MagicCrates::ACTION_NONE) {
+            $player->sendMessage(MagicCrates::PREFIX . " §cYou can't break blocks while creating or removing a crate");
             $e->cancel();
             return;
         }
 
-        if ($player->hasPermission("magiccrates.break.remove") and !is_null(CrateUtils::getCrateType($block))) {
-            $x = $block->getPosition()->getFloorX();
-            $y = $block->getPosition()->getFloorY();
-            $z = $block->getPosition()->getFloorZ();
-            $world = $block->getPosition()->getWorld();
+        $crate = Crate::getByPosition($block->getPosition());
 
-            $form = new CrateForm($x, $y, $z, $world->getFolderName());
+        if ($player->hasPermission("magiccrates.break.remove") && $crate !== null) {
+            $form = new CrateForm($this->plugin, $crate->getPos());
             $form->sendRemoveForm($player);
             $e->cancel();
         }
     }
 
+    public function onChestPair(ChestPairEvent $e): void
+    {
+        $left = Crate::getByPosition($e->getLeft()->getPosition());
+        $right = Crate::getByPosition($e->getRight()->getPosition());
+        if ($left !== null || $right !== null) $e->cancel();
+    }
+
     public function onJoin(PlayerJoinEvent $e): void
     {
         $player = $e->getPlayer();
-        FloatingTextUtils::loadAllParticles($player);
+        Crate::showAllFloatingText($player);
     }
 
     public function onWorldChange(EntityTeleportEvent $e): void
     {
         $player = $e->getEntity();
-        if (!$player instanceof Player) return;
+        if (!$player instanceof Player || $e->isCancelled()) return;
 
         $to = $e->getTo();
         $from = $e->getFrom();
         if ($to->getWorld()->getFolderName() === $from->getWorld()->getFolderName()) return;
 
-        FloatingTextUtils::loadAllParticles($player, $to->getWorld());
+        Crate::showAllFloatingText($player, $to->getWorld());
     }
 }

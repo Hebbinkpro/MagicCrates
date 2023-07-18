@@ -9,16 +9,12 @@ use CortexPE\Commando\args\TargetPlayerArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\args\CrateTypeArgument;
-use Hebbinkpro\MagicCrates\Main;
+use Hebbinkpro\MagicCrates\crate\CrateType;
 use pocketmine\command\CommandSender;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\VanillaEnchantments;
-use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 
 class CrateKey extends BaseSubCommand
 {
-    private Main $main;
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
@@ -28,7 +24,7 @@ class CrateKey extends BaseSubCommand
                 $sender->sendMessage("[§6Magic§cCrates§r] §cUsage: /mc makekey <type> <amount> <player>");
                 return;
             }
-            if (is_null($this->main->getServer()->getPlayerExact($args["player"]))) {
+            if (is_null($this->plugin->getServer()->getPlayerExact($args["player"]))) {
                 $sender->sendMessage("[§6Magic§cCrates§r] §cThe given player isn't online");
                 return;
             }
@@ -36,7 +32,7 @@ class CrateKey extends BaseSubCommand
 
         $types = [];
 
-        foreach ($this->main->getConfig()->get("types") as $key => $content) {
+        foreach ($this->plugin->getConfig()->get("types") as $key => $content) {
             $types[] = $key;
         }
         if (!isset($args["type"]) or !in_array($args["type"], $types)) {
@@ -49,17 +45,14 @@ class CrateKey extends BaseSubCommand
             return;
         }
 
-        $key = VanillaItems::PAPER();
-        $key->setCustomName("§e" . $args["type"] . " §r§dCrate Key");
-        $key->setLore(["§6Magic§cCrates §7Key - " . $args["type"]]);
-        $key->addEnchantment(new EnchantmentInstance(VanillaEnchantments::UNBREAKING(), 1));
+        $key = CrateType::getById($args["type"])->getCrateKey();
 
         if (!isset($args["amount"])) $count = 1;
         else $count = $args["amount"];
 
         if (isset($args["player"])) {
-            if ($this->main->getServer()->getPlayerExact($args["player"]) instanceof Player) {
-                $player = $this->main->getServer()->getPlayerExact($args["player"]);
+            if ($this->plugin->getServer()->getPlayerExact($args["player"]) instanceof Player) {
+                $player = $this->plugin->getServer()->getPlayerExact($args["player"]);
                 $i = 0;
                 while ($i < $count) {
                     $i++;
@@ -88,7 +81,6 @@ class CrateKey extends BaseSubCommand
      */
     protected function prepare(): void
     {
-        $this->main = Main::getInstance();
 
         $this->setPermission("magiccrates.cmd.makekey");
 

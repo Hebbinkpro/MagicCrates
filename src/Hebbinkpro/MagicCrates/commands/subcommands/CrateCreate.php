@@ -4,13 +4,13 @@
 namespace Hebbinkpro\MagicCrates\commands\subcommands;
 
 use CortexPE\Commando\BaseSubCommand;
-use Hebbinkpro\MagicCrates\Main;
+use Hebbinkpro\MagicCrates\MagicCrates;
+use Hebbinkpro\MagicCrates\utils\PlayerData;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 
 class CrateCreate extends BaseSubCommand
 {
-    private Main $main;
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
@@ -19,27 +19,27 @@ class CrateCreate extends BaseSubCommand
             return;
         }
 
-        if (isset($this->main->removeCrates[$sender->getName()])) {
-            $sender->sendMessage("[§6Magic§cCrates§r] §cCrate remove mode is enabled! Disable the crate remove mode with '/mc remove' and try again");
+        $action = PlayerData::getInstance()->getInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+
+        if ($action == MagicCrates::ACTION_CRATE_REMOVE) {
+            $sender->sendMessage("[§6Magic§cCrates§r] §cCrate remove mode is §aenabled§c! Disable the crate remove mode with '/mc remove' and try again");
             return;
         }
 
-        if (!isset($this->main->createCrates[$sender->getName()])) {
-            $this->main->createCrates[$sender->getName()] = true;
-            $sender->sendMessage("[§6Magic§cCrates§r] §aCrate create mode enabled, click on a chest to create a crate");
+        if ($action == MagicCrates::ACTION_CRATE_CREATE) {
+            PlayerData::getInstance()->setInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+            $sender->sendMessage("[§6Magic§cCrates§r] §eCrate create mode §cdisabled");
             return;
         }
 
-        if ($this->main->createCrates[$sender->getName()] === true) {
-            unset($this->main->createCrates[$sender->getName()]);
-            $sender->sendMessage("[§6Magic§cCrates§r] §cCrate create mode disabeld");
+        if ($action == MagicCrates::ACTION_NONE) {
+            PlayerData::getInstance()->setInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_CRATE_CREATE);
+            $sender->sendMessage("[§6Magic§cCrates§r] §eCrate create mode §aenabled§e, click on a chest to create a crate");
         }
     }
 
     protected function prepare(): void
     {
-        $this->main = Main::getInstance();
-
         $this->setPermission("magiccrates.cmd.create");
     }
 }
