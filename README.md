@@ -1,6 +1,11 @@
 # MagicCrates [![](https://poggit.pmmp.io/shield.dl.total/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
-Add customizable crates to your server
+Add customizable crates to your server.
+- Add as many crate types as you want
+- Item and command rewards
+- Open crates with a nice animation
+- In-game preview menu with the crate contents including the rarity of each item (NEW in v2.1.0)
+- [Customies](https://github.com/CustomiesDevs/Customies) support (NEW in v2.1.0)
 
 ## Downloads
 
