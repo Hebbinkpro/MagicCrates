@@ -112,14 +112,6 @@ class Crate
         return self::$crates;
     }
 
-    /**
-     * @return CrateType
-     */
-    public function getType(): CrateType
-    {
-        return $this->type;
-    }
-
     public function getOpener(): ?Player
     {
         return $this->opener;
@@ -160,6 +152,14 @@ class Crate
         (new CrateOpenEvent($this, $player))->call();
 
         MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $nbt));
+    }
+
+    /**
+     * @return CrateType
+     */
+    public function getType(): CrateType
+    {
+        return $this->type;
     }
 
     public function hideFloatingText(?Player $player = null): void

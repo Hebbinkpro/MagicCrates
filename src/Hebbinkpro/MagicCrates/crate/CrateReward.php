@@ -3,6 +3,7 @@
 namespace Hebbinkpro\MagicCrates\crate;
 
 use customiesdevs\customies\item\CustomiesItemFactory;
+use Exception;
 use pocketmine\block\Air;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\StringToEnchantmentParser;
@@ -94,7 +95,7 @@ class CrateReward
                 // get the Customies item, and catch the error...
                 try {
                     $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $item = null;
                 }
             }

@@ -33,6 +33,17 @@ class MagicCrates extends PluginBase
 
     private array $notLoadedCrates = [];
 
+    /**
+     * Schedule the start crate animation task with the delay given in the config
+     * @param StartCrateAnimationTask $task
+     * @return void
+     */
+    public static function scheduleAnimationTask(StartCrateAnimationTask $task): void
+    {
+        $delay = self::$instance->getConfig()->get("delay");
+        self::$instance->getScheduler()->scheduleDelayedTask($task, $delay);
+    }
+
     public function onLoad(): void
     {
         // register the crate item entity
@@ -63,26 +74,15 @@ class MagicCrates extends PluginBase
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command"));
     }
 
-    /**
-     * Schedule the start crate animation task with the delay given in the config
-     * @param StartCrateAnimationTask $task
-     * @return void
-     */
-    public static function scheduleAnimationTask(StartCrateAnimationTask $task): void
+    private function loadCrateTypes(): void
     {
-        $delay = self::$instance->getConfig()->get("delay");
-        self::$instance->getScheduler()->scheduleDelayedTask($task, $delay);
-    }
-
-    private function loadCrateTypes(): void {
         $errorMsg = "";
         // decode all crate types
         foreach ($this->getConfig()->get("types") as $id => $type) {
             $crateType = CrateType::decode($id, $type, $errorMsg);
             if ($crateType === null) {
                 $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
-            }
-            else $this->getLogger()->info("Loaded crate type: $id");
+            } else $this->getLogger()->info("Loaded crate type: $id");
         }
     }
 

@@ -174,20 +174,6 @@ class CrateType
     }
 
     /**
-     * Get the total amount of rewards
-     * @return int the summation of the amount of all rewards
-     */
-    public function getTotalRewardsAmount(): int
-    {
-        $amount = 0;
-        foreach ($this->rewards as $reward) {
-            $amount += $reward->getAmount();
-        }
-
-        return $amount;
-    }
-
-    /**
      * Get a list of all reward probabilities
      * @param bool $percentage change probabilities (0-1) to percentages (0-100)
      * @return array<string, float> a list of all reward probabilities
@@ -203,5 +189,19 @@ class CrateType
         }
 
         return $dist;
+    }
+
+    /**
+     * Get the total amount of rewards
+     * @return int the summation of the amount of all rewards
+     */
+    public function getTotalRewardsAmount(): int
+    {
+        $amount = 0;
+        foreach ($this->rewards as $reward) {
+            $amount += $reward->getAmount();
+        }
+
+        return $amount;
     }
 }

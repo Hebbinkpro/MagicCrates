@@ -99,30 +99,31 @@ A crate type can have many rewards, and you can set the rarity of each reward in
 
 - `name: string` The name of the reward.
 - `item:` The item that will be given to the player as reward.
-  - `id: string` The minecraft ID of the item (e.g. `"diamond"` or `"ender_pearl"`)
-  - `name: string` The custom name of the item.
-  - `amount: int` The amount of the item.
-  - `lore: string|string[]` The item lore.
-    - You can add a single line by providing a string e.g. `"My lore"` or multiple lines by providing an array
-      e.g. `["First", "Second"]`.
-  - `enchantments:` A list of all enchantments on the item.
-    - `name: string` The name of the enchantment.
-    - `level: int` The level of the enchantment
+    - `id: string` The minecraft ID of the item (e.g. `"diamond"` or `"ender_pearl"`)
+    - `name: string` The custom name of the item.
+    - `amount: int` The amount of the item.
+    - `lore: string|string[]` The item lore.
+        - You can add a single line by providing a string e.g. `"My lore"` or multiple lines by providing an array
+          e.g. `["First", "Second"]`.
+    - `enchantments:` A list of all enchantments on the item.
+        - `name: string` The name of the enchantment.
+        - `level: int` The level of the enchantment
 - `commands: string[]` A list of commands when the player gets this reward.
 - `amount: int` How many times this reward is inside the crate. This makes you able to set rarities to rewards.
-  - e.g. if you have a reward with amount `1` and a reward with amount `2`, there are a total of `3` items in the crate.
-    The probability that you win the first item is `1/3` and for the second item it is `2/3`.
+    - e.g. if you have a reward with amount `1` and a reward with amount `2`, there are a total of `3` items in the
+      crate.
+      The probability that you win the first item is `1/3` and for the second item it is `2/3`.
 - `icon: string` The path/url to a texture or image. The texture/image will be displayed on the preview menu.
-  - For minecraft textures you can use `textures/items/<name>` for items or `textures/blocks/<name>` for blocks.
-  - It is also possible to use other images instead of the minecraft textures. This have to be urls that start
-    with`http://` or `https://` to work.
-  - When no icon is provided, the icon of the item will be used. When there are only commands in the reward, a command
-    block icon is shown.
-  - Notice that for some blocks, e.g. logs, concrete and wool (Most of the blocks added to later versions of mc don't
-    have this problem), there will no icon be found, if you want red wool for example, you have to
-    use `textures/blocks/wool_colored_red`.
-  - You can find all vanilla resource pack textures under the `textures/` path. You can see all the textures in
-    the [bedrock-samples](https://github.com/Mojang/bedrock-samples/) resource pack.
+    - For minecraft textures you can use `textures/items/<name>` for items or `textures/blocks/<name>` for blocks.
+    - It is also possible to use other images instead of the minecraft textures. This have to be urls that start
+      with`http://` or `https://` to work.
+    - When no icon is provided, the icon of the item will be used. When there are only commands in the reward, a command
+      block icon is shown.
+    - Notice that for some blocks, e.g. logs, concrete and wool (Most of the blocks added to later versions of mc don't
+      have this problem), there will no icon be found, if you want red wool for example, you have to
+      use `textures/blocks/wool_colored_red`.
+    - You can find all vanilla resource pack textures under the `textures/` path. You can see all the textures in
+      the [bedrock-samples](https://github.com/Mojang/bedrock-samples/) resource pack.
 
 #### Command options
 
