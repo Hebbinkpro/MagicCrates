@@ -2,6 +2,10 @@
 
 namespace Hebbinkpro\MagicCrates\crate;
 
+use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
+use Hebbinkpro\MagicCrates\MagicCrates;
+use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
+use Hebbinkpro\MagicCrates\utils\EntityUtils;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\particle\FloatingTextParticle;
@@ -129,6 +133,33 @@ class Crate
     public function isOpen(): bool
     {
         return $this->opener !== null;
+    }
+
+    /**
+     * Open a crate
+     * @param Player $player
+     * @return void
+     */
+    public function open(Player $player): void
+    {
+        $reward = $this->getType()->getRandomReward();
+
+        $spawnPos = $this->pos->add(0.5, 1, 0.5);
+
+        $nbt = EntityUtils::createBaseNBT($spawnPos);
+        $nbt->setString("owner", $player->getName());
+        $nbt->setFloat("spawn-y", $spawnPos->getY());
+        $nbt->setString("crate-pos", serialize($this->pos->asVector3()));
+        $nbt->setString("crate-type", $this->type->getId());
+        $nbt->setString("reward", $reward->getName());
+
+        $player->sendMessage(MagicCrates::PREFIX . " §eYou are opening a §6{$this->type->getId()} §ecrate...");
+        $this->opener = $player;
+        $this->hideFloatingText();
+
+        (new CrateOpenEvent($this, $player))->call();
+
+        MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $nbt));
     }
 
     public function hideFloatingText(?Player $player = null): void

@@ -10,6 +10,7 @@ use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\entity\CrateItem;
+use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
@@ -28,6 +29,8 @@ class MagicCrates extends PluginBase
     public const ACTION_CRATE_CREATE = 1;
     public const ACTION_CRATE_REMOVE = 2;
 
+    private static MagicCrates $instance;
+
     public function onLoad(): void
     {
         // register the crate item entity
@@ -41,6 +44,8 @@ class MagicCrates extends PluginBase
      */
     public function onEnable(): void
     {
+        self::$instance = $this;
+
         if (!PacketHooker::isRegistered()) PacketHooker::register($this);
         CrateCommandSender::register($this);
 
@@ -50,7 +55,17 @@ class MagicCrates extends PluginBase
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command"));
+    }
 
+    /**
+     * Schedule the start crate animation task with the delay given in the config
+     * @param StartCrateAnimationTask $task
+     * @return void
+     */
+    public static function scheduleAnimationTask(StartCrateAnimationTask $task): void
+    {
+        $delay = self::$instance->getConfig()->get("delay") * 20;
+        self::$instance->getScheduler()->scheduleDelayedTask($task, $delay);
     }
 
     /**
@@ -59,10 +74,11 @@ class MagicCrates extends PluginBase
      */
     private function loadAllCrates(): void
     {
+        $errorMsg = "";
         // decode all crate types
         foreach ($this->getConfig()->get("types") as $id => $type) {
-            $crateType = CrateType::decode($id, $type);
-            if ($crateType === null) $this->getLogger()->warning("Could not load crate type: $id");
+            $crateType = CrateType::decode($id, $type, $errorMsg);
+            if ($crateType === null) $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
             else $this->getLogger()->info("Loaded crate type: $id");
         }
 
@@ -77,7 +93,7 @@ class MagicCrates extends PluginBase
         // decode all crates
         foreach ($crates as $cd) {
             $crate = Crate::decode($cd);
-            if ($crate === null) $this->getLogger()->warning("Could not load crate: at '{$cd["x"]},{$cd["y"]},{$cd["z"]}', in world '{$cd["world"]}', of type '{$cd["type"]}'");
+            if ($crate === null) $this->getLogger()->warning("Could not load crate of type '{$cd["type"]}' in world '{$cd["world"]}' at '{$cd["x"]},{$cd["y"]},{$cd["z"]}'.");
         }
     }
 

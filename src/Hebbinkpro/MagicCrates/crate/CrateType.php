@@ -17,7 +17,7 @@ class CrateType
 
     private string $id;
     private string $name;
-    /** @var CrateReward[] */
+    /** @var array<string, CrateReward> */
     private array $rewards;
     /** @var string[] */
     private array $commands;
@@ -25,7 +25,7 @@ class CrateType
     /**
      * @param string $id
      * @param string $name
-     * @param CrateReward[] $rewards
+     * @param array<string, CrateReward> $rewards
      * @param string[] $commands
      */
     public function __construct(string $id, string $name, array $rewards, array $commands)
@@ -45,18 +45,30 @@ class CrateType
      * @param array{name: string, rewards: array, commands: string[]} $data
      * @return CrateType|null
      */
-    public static function decode(string $id, array $data): ?CrateType
+    public static function decode(string $id, array $data, string &$errorMsg = ""): ?CrateType
     {
-        $name = $data["name"];
+        $name = $data["name"] ?? "§6$id §cCrate§r";
+
         $rewards = [];
-        foreach ($data["rewards"] as $rewardData) {
-            $reward = CrateReward::decode($rewardData);
-            if ($reward !== null) $rewards[$reward->getName()] = $reward;
+        foreach ($data["rewards"] ?? [] as $rewardData) {
+            $reward = CrateReward::decode($rewardData, $errorMsg);
+
+            // reward is not valid, that is not valid
+            if ($reward === null) {
+                $errorMsg = "Could not decode reward: $errorMsg";
+                return null;
+            }
+
+            $rewards[$reward->getName()] = $reward;
         }
-        // we cannot have a type without rewards
-        if (count($rewards) == 0) return null;
 
         $commands = $data["commands"] ?? [];
+
+        // we cannot have a type without rewards
+        if (count($rewards) == 0 && count($commands) == 0) {
+            $errorMsg = "No rewards or commands given.";
+            return null;
+        }
 
         return new CrateType($id, $name, $rewards, $commands);
     }
@@ -159,5 +171,37 @@ class CrateType
         $key->getNamedTag()->setString(MagicCrates::KEY_NBT_TAG, $this->id);
 
         return $key;
+    }
+
+    /**
+     * Get the total amount of rewards
+     * @return int the summation of the amount of all rewards
+     */
+    public function getTotalRewardsAmount(): int
+    {
+        $amount = 0;
+        foreach ($this->rewards as $reward) {
+            $amount += $reward->getAmount();
+        }
+
+        return $amount;
+    }
+
+    /**
+     * Get a list of all reward probabilities
+     * @param bool $percentage change probabilities (0-1) to percentages (0-100)
+     * @return array<string, float> a list of all reward probabilities
+     */
+    public function getRewardDistribution(bool $percentage = false): array
+    {
+        $dist = [];
+        $totalAmount = $this->getTotalRewardsAmount();
+
+        foreach ($this->rewards as $reward) {
+            $dist[$reward->getName()] = $reward->getAmount() / $totalAmount;
+            if ($percentage) $dist[$reward->getName()] *= 100;
+        }
+
+        return $dist;
     }
 }

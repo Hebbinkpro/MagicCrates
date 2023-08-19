@@ -4,10 +4,7 @@
 namespace Hebbinkpro\MagicCrates;
 
 use Hebbinkpro\MagicCrates\crate\Crate;
-use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
-use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\CrateForm;
-use Hebbinkpro\MagicCrates\utils\EntityUtils;
 use Hebbinkpro\MagicCrates\utils\PlayerData;
 use pocketmine\block\Chest;
 use pocketmine\block\tile\Chest as TileChest;
@@ -122,9 +119,10 @@ class EventListener implements Listener
         $type = $crate->getType();
         $typeId = $type->getId();
 
-
         if ($item->getTypeId() != ItemTypeIds::PAPER || $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") !== $typeId) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cUse a §e$typeId §r§ccrate key to open this crate");
+            //$player->sendMessage(MagicCrates::PREFIX . " §cUse a §e$typeId §r§ccrate key to open this crate");
+            $form = new CrateForm($this->plugin, $crate->getPos());
+            $form->sendPreviewForm($player);
             return;
         }
 
@@ -133,31 +131,11 @@ class EventListener implements Listener
             return;
         }
 
-        $item->pop();
-        $player->getInventory()->setItemInHand($item);
+        $key = $type->getCrateKey();
 
-        $reward = $crate->getType()->getRandomReward();
+        $player->getInventory()->removeItem($key);
 
-        $pos = $crate->getPos();
-        $spawnPos = $pos->add(0.5, 1, 0.5);
-
-        $nbt = EntityUtils::createBaseNBT($spawnPos);
-        $nbt->setString("owner", $player->getName());
-        $nbt->setFloat("spawn-y", $spawnPos->getY());
-        $nbt->setString("crate-pos", serialize($pos->asVector3()));
-        $nbt->setString("crate-type", $type->getId());
-        $nbt->setString("reward", $reward->getName());
-
-        $delay = $this->delay * 20;
-        if (!is_int($delay)) $delay = 0;
-
-        $player->sendMessage(MagicCrates::PREFIX . " §eYou are opening a §6$typeId §ecrate...");
-        $crate->setOpener($player);
-        $crate->hideFloatingText();
-
-        (new CrateOpenEvent($crate, $player))->call();
-
-        $this->plugin->getScheduler()->scheduleDelayedTask(new StartCrateAnimationTask($crate, $reward, $nbt), $delay);
+        $crate->open($player);
     }
 
     public function onBlockBreak(BlockBreakEvent $e): void
