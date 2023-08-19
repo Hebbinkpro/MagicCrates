@@ -1,9 +1,11 @@
 name: MagicCrates
 description: Add crates to your server
 author: Hebbinkpro
-version: 2.0.1
+version: 2.0.2
 main: Hebbinkpro\MagicCrates\MagicCrates
 api: 5.0.0
+softdepend:
+  - Customies
 
 permissions:
   magiccrates.cmd:

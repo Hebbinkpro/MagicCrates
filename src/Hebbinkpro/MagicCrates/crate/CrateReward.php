@@ -2,11 +2,13 @@
 
 namespace Hebbinkpro\MagicCrates\crate;
 
+use customiesdevs\customies\item\CustomiesItemFactory;
 use pocketmine\block\Air;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\StringToEnchantmentParser;
 use pocketmine\item\Item;
 use pocketmine\item\StringToItemParser;
+use pocketmine\Server;
 
 class CrateReward
 {
@@ -82,9 +84,22 @@ class CrateReward
         }
 
         $item = StringToItemParser::getInstance()->parse($itemData["id"]);
+
+        // its not a vanilla item
         if ($item === null) {
-            $errorMsg = "Invalid item id given: " . $itemData["id"];
-            return null;
+            // check if Customies is enabled
+            $plManager = Server::getInstance()->getPluginManager();
+            $customies = $plManager->getPlugin("Customies");
+            if ($customies !== null && $plManager->isPluginEnabled($customies)) {
+                // get the Customies item
+                $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
+            }
+
+            //  Customies does not have the item or customies is not available
+            if ($item === null) {
+                $errorMsg = "Invalid item id given: " . $itemData["id"];
+                return null;
+            }
         }
 
         if (isset($itemData["name"])) $item->setCustomName(strval($itemData["name"]));
