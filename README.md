@@ -59,7 +59,7 @@ When you have a crate key, you can open the matching crate by clicking on the cr
 
 Here you can see all options inside the `config.yml`
 
-- `delay: int` Amount of seconds it will take until the opening animation starts after a player opens a crate.
+- `delay: int` Amount of ticks it will take until the opening animation starts after a player opens a crate.
 - `types: type[]` A list of all available crate types in your server. You can add as many types as you want.
 
 ### Adding crate types

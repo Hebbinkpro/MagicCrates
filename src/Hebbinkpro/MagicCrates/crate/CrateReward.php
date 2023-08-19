@@ -91,8 +91,12 @@ class CrateReward
             $plManager = Server::getInstance()->getPluginManager();
             $customies = $plManager->getPlugin("Customies");
             if ($customies !== null && $plManager->isPluginEnabled($customies)) {
-                // get the Customies item
-                $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
+                // get the Customies item, and catch the error...
+                try {
+                    $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
+                } catch (\Exception $e) {
+                    $item = null;
+                }
             }
 
             //  Customies does not have the item or customies is not available

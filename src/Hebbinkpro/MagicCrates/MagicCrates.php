@@ -31,6 +31,8 @@ class MagicCrates extends PluginBase
 
     private static MagicCrates $instance;
 
+    private array $notLoadedCrates = [];
+
     public function onLoad(): void
     {
         // register the crate item entity
@@ -49,8 +51,12 @@ class MagicCrates extends PluginBase
         if (!PacketHooker::isRegistered()) PacketHooker::register($this);
         CrateCommandSender::register($this);
 
+        // store the config
         $this->saveResource("config.yml");
-        $this->loadAllCrates();
+
+        // load the types and created crates
+        $this->loadCrateTypes();
+        $this->loadCrates();
 
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
 
@@ -64,24 +70,28 @@ class MagicCrates extends PluginBase
      */
     public static function scheduleAnimationTask(StartCrateAnimationTask $task): void
     {
-        $delay = self::$instance->getConfig()->get("delay") * 20;
+        $delay = self::$instance->getConfig()->get("delay");
         self::$instance->getScheduler()->scheduleDelayedTask($task, $delay);
+    }
+
+    private function loadCrateTypes(): void {
+        $errorMsg = "";
+        // decode all crate types
+        foreach ($this->getConfig()->get("types") as $id => $type) {
+            $crateType = CrateType::decode($id, $type, $errorMsg);
+            if ($crateType === null) {
+                $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
+            }
+            else $this->getLogger()->info("Loaded crate type: $id");
+        }
     }
 
     /**
      * Load all crates from the json file
      * @return void
      */
-    private function loadAllCrates(): void
+    private function loadCrates(): void
     {
-        $errorMsg = "";
-        // decode all crate types
-        foreach ($this->getConfig()->get("types") as $id => $type) {
-            $crateType = CrateType::decode($id, $type, $errorMsg);
-            if ($crateType === null) $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
-            else $this->getLogger()->info("Loaded crate type: $id");
-        }
-
 
         $crates = [];
         if (file_exists($this->getDataFolder() . "crates.json")) {
@@ -92,8 +102,12 @@ class MagicCrates extends PluginBase
 
         // decode all crates
         foreach ($crates as $cd) {
-            $crate = Crate::decode($cd);
-            if ($crate === null) $this->getLogger()->warning("Could not load crate of type '{$cd["type"]}' in world '{$cd["world"]}' at '{$cd["x"]},{$cd["y"]},{$cd["z"]}'.");
+            $crate = Crate::decode($cd ?? []);
+            if ($crate === null) {
+                // store the crate so that it will not be lost when all crates are saved
+                $this->notLoadedCrates[] = $cd;
+                $this->getLogger()->warning("Could not load crate of type '{$cd["type"]}' in world '{$cd["world"]}' at '{$cd["x"]},{$cd["y"]},{$cd["z"]}'.");
+            }
         }
     }
 
@@ -116,7 +130,7 @@ class MagicCrates extends PluginBase
     {
         $crates = Crate::getAllCrates();
 
-        $crateData = [];
+        $crateData = $this->notLoadedCrates;
         foreach ($crates as $worldCrates) {
             foreach ($worldCrates as $crate) {
                 $crateData[] = $crate->encode();
