@@ -1,5 +1,5 @@
-# The delay before the item animation begins
-delay: 1
+# The delay in ticks before the item animation begins
+delay: 20
 
 # Crate commands: these are the commands executed when you open a crate, or win a specified reward.
 # For commands, you can insert some basic values, like the name of the player or which reward the player gets
@@ -12,46 +12,27 @@ delay: 1
 
 # A list of all your crate types
 types:
-  # the id of the crate, this will identify your crate everywhere
   common:
-    # the name displayed above the crate
     name: "§eCommon §6Crate"
-    # A list of all rewards inside the crate
     rewards:
-      # the name of the reward
       - name: "Diamond"
-        # the item that is rewarded to the player
         item:
-          # the custom name of the item
           name: "Diamond"
-          # the id of the item
           id: "minecraft:diamond"
-          # the amount of the item that is given
           amount: 1
-          # the lore text (text below then name) of the item
           lore: "Diamond from a crate"
-          # a list of enchantments of the crate
           enchantments:
-            # the name of the enchantment
             - name: "efficiency"
-              # the level of the enchantment
               level: 1
-        # A list of commands that will be executed when the player gets this reward
         commands:
-          # sends a private msg to the player when the player winds the Diamond reward
           - "msg {player} be carefull with this diamond!"
-
-        # The total amount of this reward inside the crate
         amount: 1
-      # you can add as many rewards to the crate as you want
+
       - name: "Dirt"
         item:
           id: "minecraft:dirt"
           amount: 2
         commands: [ ]
         amount: 2
-    # a list of commands that will always be executed when opening this crate
     commands:
-      # sends a message to the whole server that player x won a reward from a crate with the given type
       - "say {player} won {reward} from a {crate_type} crate"
-  # You can add as many crate types as you want
