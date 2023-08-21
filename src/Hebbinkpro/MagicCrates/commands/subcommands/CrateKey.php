@@ -5,10 +5,10 @@ namespace Hebbinkpro\MagicCrates\commands\subcommands;
 
 
 use CortexPE\Commando\args\IntegerArgument;
-use CortexPE\Commando\args\TargetPlayerArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\args\CrateTypeArgument;
+use Hebbinkpro\MagicCrates\commands\args\TargetPlayerArgument;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
@@ -18,13 +18,14 @@ class CrateKey extends BaseSubCommand
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
+        $plugin = $this->getOwningPlugin();
 
         if (!$sender instanceof Player) {
             if (!isset($args["player"])) {
                 $sender->sendMessage("[§6Magic§cCrates§r] §cUsage: /mc makekey <type> <amount> <player>");
                 return;
             }
-            if (is_null($this->plugin->getServer()->getPlayerExact($args["player"]))) {
+            if (is_null($plugin->getServer()->getPlayerExact($args["player"]))) {
                 $sender->sendMessage("[§6Magic§cCrates§r] §cThe given player isn't online");
                 return;
             }
@@ -32,7 +33,7 @@ class CrateKey extends BaseSubCommand
 
         $types = [];
 
-        foreach ($this->plugin->getConfig()->get("types") as $key => $content) {
+        foreach ($plugin->getConfig()->get("types") as $key => $content) {
             $types[] = $key;
         }
         if (!isset($args["type"]) or !in_array($args["type"], $types)) {
@@ -51,8 +52,8 @@ class CrateKey extends BaseSubCommand
         else $count = $args["amount"];
 
         if (isset($args["player"])) {
-            if ($this->plugin->getServer()->getPlayerExact($args["player"]) instanceof Player) {
-                $player = $this->plugin->getServer()->getPlayerExact($args["player"]);
+            if ($plugin->getServer()->getPlayerExact($args["player"]) instanceof Player) {
+                $player = $plugin->getServer()->getPlayerExact($args["player"]);
                 $i = 0;
                 while ($i < $count) {
                     $i++;
@@ -86,7 +87,7 @@ class CrateKey extends BaseSubCommand
 
         $this->registerArgument(0, new CrateTypeArgument("type"));
         $this->registerArgument(1, new IntegerArgument("amount", true));
-        $this->registerArgument(2, new TargetPlayerArgument(true, "player"));
+        $this->registerArgument(2, new TargetPlayerArgument("player", true));
 
 
     }
