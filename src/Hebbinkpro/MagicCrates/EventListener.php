@@ -130,10 +130,12 @@ class EventListener implements Listener
             $player->sendMessage(MagicCrates::PREFIX . " §cYour inventory is full, come back later when your inventory is cleared!");
             return;
         }
+        
+        $item->pop();
+        $player->getInventory()->setItemInHand($item);
+        // $key = $type->getCrateKey();
 
-        $key = $type->getCrateKey();
-
-        $player->getInventory()->removeItem($key);
+        // $player->getInventory()->removeItem($key);
 
         $crate->open($player);
     }
