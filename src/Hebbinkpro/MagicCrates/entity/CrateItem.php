@@ -70,9 +70,9 @@ class CrateItem extends Entity
                 $owner->sendMessage(MagicCrates::PREFIX . " §aYou won §e" . $this->getNameTag());
 
                 $this->crateType->executeCommands($owner, $this->reward);
+                (new CrateRewardEvent($this->crate, $owner, $this->reward))->call();
             }
 
-            (new CrateRewardEvent($this->crate, $owner, $this->reward))->call();
             $this->crate->setOpener(null);
             $this->crate->showFloatingText();
 
