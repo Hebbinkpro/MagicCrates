@@ -45,7 +45,7 @@ class CrateForm
 
         });
 
-        $form->setTitle(MagicCrates::PREFIX . " - Create crate");
+        $form->setTitle(MagicCrates::getPrefix() . " - Create crate");
 
         $form->addLabel("Select the crate type for the new crate");
         $form->addDropdown("Crate type", $types);
@@ -67,15 +67,15 @@ class CrateForm
             if ($data) {
                 $crate = new Crate($this->pos, $this->type);
                 $crate->showFloatingText();
-                $player->sendMessage(MagicCrates::PREFIX . " §aThe {$crate->getType()->getName()}§r§a crate is created");
+                $player->sendMessage(MagicCrates::getPrefix() . " §aThe {$crate->getType()->getName()}§r§a crate is created");
                 $this->plugin->saveCrates();
                 return;
             }
 
-            $player->sendMessage(MagicCrates::PREFIX . " §aCrate creation is cancelled");
+            $player->sendMessage(MagicCrates::getPrefix() . " §aCrate creation is cancelled");
         });
 
-        $form->setTitle(MagicCrates::PREFIX . " - Create crate");
+        $form->setTitle(MagicCrates::getPrefix() . " - Create crate");
 
         $form->setContent("Are you sure you want to create a §e{$this->type->getId()}§r crate?\n\nClick §asave§r to save the crate, or click §eCancel§r to cancel.");
         $form->setButton1("§aSave");
@@ -93,7 +93,7 @@ class CrateForm
     {
         $crate = Crate::getByPosition($this->pos);
         if ($crate === null) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cNo crate found at this position.");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cNo crate found at this position.");
             return;
         }
 
@@ -105,14 +105,14 @@ class CrateForm
                 $crate->hideFloatingText();
                 $this->plugin->saveCrates();
 
-                $player->sendMessage(MagicCrates::PREFIX . " §aThe §e{$crate->getType()->getId()} §r§acrate is removed");
+                $player->sendMessage(MagicCrates::getPrefix() . " §aThe §e{$crate->getType()->getId()} §r§acrate is removed");
                 return;
             }
 
-            $player->sendMessage(MagicCrates::PREFIX . " §aThe crate isn't removed");
+            $player->sendMessage(MagicCrates::getPrefix() . " §aThe crate isn't removed");
         });
 
-        $form->setTitle(MagicCrates::PREFIX . " - Create crate");
+        $form->setTitle(MagicCrates::getPrefix() . " - Create crate");
 
         $form->setContent("Do you want to delete this §e{$crate->getType()->getId()}§r crate?\n\nClick §cDelete§r to delete the crate, or click §eCancel§r to cancel.");
         $form->setButton1("§cDelete");
@@ -130,42 +130,32 @@ class CrateForm
     {
         $crate = Crate::getByPosition($this->pos);
         if ($crate === null) {
-            $player->sendMessage(MagicCrates::PREFIX . " No crate found at this position.");
+            $player->sendMessage(MagicCrates::getPrefix() . " No crate found at this position.");
             return;
         }
 
         $type = $crate->getType();
 
-        // check if the player has a crate key in its inventory
-        $hasCrateKey = $player->getInventory()->contains($type->getCrateKey());
 
         $form = new SimpleForm(function (Player $player, $data) use ($crate, $type) {
             {
                 if (!is_string($data) || $data === "close") return;
 
                 if ($data === "open") {
-                    $key = $type->getCrateKey();
-
-                    if (!$player->getInventory()->contains($key)) {
-                        $player->sendMessage(MagicCrates::PREFIX . " You don't have a {$type->getId()} crate key in your inventory.");
-                        return;
-                    }
-
-                    $player->getInventory()->removeItem($key);
-                    $crate->open($player);
-
+                    $crate->openWithKey($player);
                     return;
                 }
             }
         });
 
-
-        $form->setTitle(MagicCrates::PREFIX . " - {$crate->getType()->getName()}§r Preview");
-
-        if ($hasCrateKey) $form->addButton("§aOpen Crate", -1, "", "open");
+        // set the form title
+        $form->setTitle(MagicCrates::getPrefix() . " - {$crate->getType()->getName()}§r Preview");
+        // add the open button if the player has a valid key in their inventory
+        if ($type->getKeyFromPlayer($player) !== null) $form->addButton("§aOpen Crate", -1, "", "open");
+        // add a close button
         $form->addButton("§cClose", -1, "", "close");
 
-
+        // add buttons for all rewards inside the crate
         foreach ($type->getRewardDistribution(true) as $name => $p) {
             $reward = $type->getRewardByName($name);
 

@@ -4,8 +4,8 @@ Add customizable crates to your server.
 - Add as many crate types as you want
 - Item and command rewards
 - Open crates with a nice animation
-- In-game preview menu with the crate contents including the rarity of each item (NEW in v2.1.0)
-- [Customies](https://github.com/CustomiesDevs/Customies) support (NEW in v2.1.0)
+- In-game preview menu with the crate contents including the rarity of each item
+- [Customies](https://github.com/CustomiesDevs/Customies) support
 
 ## Downloads
 
@@ -18,21 +18,21 @@ Add customizable crates to your server.
 
 Command aliases: `/magiccrates`, `/mc`
 
-| Command                                                 | Description      | Permission-             |
-|---------------------------------------------------------|------------------|-------------------------|
-| `/magiccrates create`                                   | Create a crate   | magiccrates.cmd.create  |
-| `/magiccrates remove`                                   | Remove a crate   | magiccrates.cmd.remove  |
-| `/magiccrates makekey <crate_type> \[amount] \[player]` | Make a crate key | magiccrates.cmd.makekey |
+| Command                                               | Description      | Permission-             |
+|-------------------------------------------------------|------------------|-------------------------|
+| `/magiccrates create`                                 | Create a crate   | magiccrates.cmd.create  |
+| `/magiccrates remove`                                 | Remove a crate   | magiccrates.cmd.remove  |
+| `/magiccrates makekey <crate_type> [amount] [player]` | Make a crate key | magiccrates.cmd.makekey |
 
 ### Permissions
 
-| Permission                 | Description                                  | Default |
-|----------------------------|----------------------------------------------|---------|
-| `magiccrates.cmd`          | Access to the `/magiccrates` command         | OP      |
-| `magiccrates.cmd.create`   | Access to the `/magiccrates create` command  | OP      |
-| `magiccrates.cmd.remove`   | Access to the `/magiccrates remove` command  | OP      |
-| `magiccrates.cmd.makekey`  | Access to the `/magiccrates makekey` command | OP      |
-| `magiccrates.break.remove` | Permission to remove a crate by breaking it  | OP      |
+| Permission                 | Description                                 | Default |
+|----------------------------|---------------------------------------------|---------|
+| `magiccrates.cmd`          | Access to the `/magiccrates` command        | OP      |
+| `magiccrates.cmd.create`   | Access to the `/magiccrates create` command | OP      |
+| `magiccrates.cmd.remove`   | Access to the `/magiccrates remove` command | OP      |
+| `magiccrates.cmd.key`      | Access to the `/magiccrates key` command    | OP      |
+| `magiccrates.break.remove` | Permission to remove a crate by breaking it | OP      |
 
 ### Create a new crate
 
@@ -57,7 +57,7 @@ You can also remove crates by breaking the crate:
 ### Create a crate key
 
 You can only open crates by using a crate key. Each crate type has its own key.<br>
-You can create keys using the command `/mc makekey <crate_type> [amount] [player]`<br>
+You can create keys using the command `/mc key <crate_type> [amount] [player]`<br>
 When you have a crate key, you can open the matching crate by clicking on the crate.
 
 ## Options
@@ -65,6 +65,8 @@ When you have a crate key, you can open the matching crate by clicking on the cr
 Here you can see all options inside the `config.yml`
 
 - `delay: int` Amount of ticks it will take until the opening animation starts after a player opens a crate.
+- `prefix: string` Prefix used for messages send by the plugin
+- `key-name: string` name of the crate keys (The available options are `crate` and `crate_type`)
 - `types: type[]` A list of all available crate types in your server. You can add as many types as you want.
 
 ### Adding crate types

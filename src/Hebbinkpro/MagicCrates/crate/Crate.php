@@ -6,6 +6,8 @@ use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\EntityUtils;
+use pocketmine\item\Item;
+use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\particle\FloatingTextParticle;
@@ -128,7 +130,40 @@ class Crate
     }
 
     /**
-     * Open a crate
+     * Open the crate and remove the key from the players inventory
+     * @param Player $player
+     * @param Item|null $item
+     * @return void
+     */
+    public function openWithKey(Player $player, Item $item = null): void {
+        $inv = $player->getInventory();
+
+        if ($item === null) $item = $this->getType()->getKeyFromPlayer($player);
+
+        // it is an invalid crate key, or the player does not have it in their inventory
+        if ($item === null || !$this->getType()->isValidKey($item) || !$inv->contains($item)) {
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou don't have a valid {$this->getType()->getId()} crate key!");
+            return;
+        }
+
+        // the player has less than 2 free slots
+        if (!$inv->canAddItem(VanillaItems::DIAMOND_SWORD()->setCount(2))) {
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full, come back later when your have enough space in your inventory!");
+            return;
+        }
+
+        // get the key as a single item
+        $key = (clone $item)->setCount(1);
+
+        // remove the key from the inventory
+        $player->getInventory()->removeItem($key);
+
+        // open the crate
+        $this->open($player);
+    }
+
+    /**
+     * Open the crate
      * @param Player $player
      * @return void
      */
@@ -145,7 +180,7 @@ class Crate
         $nbt->setString("crate-type", $this->type->getId());
         $nbt->setString("reward", $reward->getName());
 
-        $player->sendMessage(MagicCrates::PREFIX . " §eYou are opening a §6{$this->type->getId()} §ecrate...");
+        $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening a §6{$this->type->getId()} §ecrate...");
         $this->opener = $player;
         $this->hideFloatingText();
 

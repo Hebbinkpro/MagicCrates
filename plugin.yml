@@ -1,7 +1,7 @@
 name: MagicCrates
 description: Add crates to your server
 author: Hebbinkpro
-version: 2.1.2
+version: 2.2.0
 main: Hebbinkpro\MagicCrates\MagicCrates
 api: 5.0.0
 softdepend:
@@ -17,9 +17,9 @@ permissions:
   magiccrates.cmd.remove:
     default: op
     description: Access to the /magiccrates remove command
-  magiccrates.cmd.makekey:
+  magiccrates.cmd.key:
     default: op
-    description: Access to the /magiccrates makekey command
+    description: Access to the /magiccrates key command
   magiccrates.break:
     default: false
   magiccrates.break.remove:

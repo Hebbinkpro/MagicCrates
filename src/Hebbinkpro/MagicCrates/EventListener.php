@@ -15,20 +15,16 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\item\Item;
-use pocketmine\item\ItemTypeIds;
-use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 use pocketmine\world\Position;
 
 class EventListener implements Listener
 {
     private MagicCrates $plugin;
-    private int $delay;
 
     public function __construct(MagicCrates $plugin)
     {
         $this->plugin = $plugin;
-        $this->delay = $plugin->getConfig()->get("delay");
     }
 
     public function onInteractChest(PlayerInteractEvent $e): void
@@ -51,7 +47,7 @@ class EventListener implements Listener
         $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
 
         if ($tile->isPaired() && $playerAction > MagicCrates::ACTION_NONE) {
-            $player->sendMessage(MagicCrates::PREFIX . "§c You cannot interact with a paired chest!");
+            $player->sendMessage(MagicCrates::getPrefix() . "§c You cannot interact with a paired chest!");
             $e->cancel();
             return;
         }
@@ -83,7 +79,7 @@ class EventListener implements Listener
     {
 
         if ($crate !== null) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cThere is already a crate on this position.");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cThere is already a crate on this position.");
             return;
         }
 
@@ -97,7 +93,7 @@ class EventListener implements Listener
     {
 
         if ($crate === null) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cThere is no crate on this position.");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cThere is no crate on this position.");
             return;
         }
 
@@ -112,30 +108,20 @@ class EventListener implements Listener
 
         if ($crate->isOpen()) {
             $playerName = $crate->getOpener()->getName();
-            $player->sendMessage(MagicCrates::PREFIX . " §cYou have to wait, §e$playerName §r§cis opening the crate");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou have to wait, §e$playerName §r§cis opening the crate");
             return;
         }
 
         $type = $crate->getType();
         $typeId = $type->getId();
 
-        if ($item->getTypeId() != ItemTypeIds::PAPER || $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") !== $typeId) {
-            //$player->sendMessage(MagicCrates::PREFIX . " §cUse a §e$typeId §r§ccrate key to open this crate");
+        if (!$type->isValidKey($item)) {
             $form = new CrateForm($this->plugin, $crate->getPos());
             $form->sendPreviewForm($player);
             return;
         }
 
-        if (!$player->getInventory()->canAddItem(VanillaItems::PAPER())) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cYour inventory is full, come back later when your inventory is cleared!");
-            return;
-        }
-
-        $key = $type->getCrateKey();
-
-        $player->getInventory()->removeItem($key);
-
-        $crate->open($player);
+        $crate->openWithKey($player, $item);
     }
 
     public function onBlockBreak(BlockBreakEvent $e): void
@@ -145,7 +131,7 @@ class EventListener implements Listener
         $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
 
         if ($playerAction > MagicCrates::ACTION_NONE) {
-            $player->sendMessage(MagicCrates::PREFIX . " §cYou can't break blocks while creating or removing a crate");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou can't break blocks while creating or removing a crate");
             $e->cancel();
             return;
         }

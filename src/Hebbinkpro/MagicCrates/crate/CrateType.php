@@ -7,6 +7,7 @@ use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
+use pocketmine\item\ItemTypeIds;
 use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 
@@ -164,13 +165,45 @@ class CrateType
 
     public function getCrateKey(): Item
     {
+        $keyName = CrateCommandSender::prepare(MagicCrates::getKeyName(), [
+           "crate" => $this->getName(),
+           "crate_type" => $this->getId()
+        ]);
+
         $key = VanillaItems::PAPER();
-        $key->setCustomName("[§6Crate Key§r] §e" . $this->id);
-        $key->setLore([MagicCrates::PREFIX]);
+        $key->setCustomName($keyName);
+        $key->setLore([MagicCrates::getPrefix()]);
         $key->addEnchantment(new EnchantmentInstance(VanillaEnchantments::UNBREAKING(), 1));
         $key->getNamedTag()->setString(MagicCrates::KEY_NBT_TAG, $this->id);
 
         return $key;
+    }
+
+    /**
+     * Check if the given item is a valid key for this crate type
+     * @param Item $item the item to check
+     * @return bool true if it is valid
+     */
+    public function isValidKey(Item $item): bool {
+        return $item->getCount() >= 1 && $item->getTypeId() == ItemTypeIds::PAPER
+            && $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") === $this->getId();
+    }
+
+    /**
+     * Get the key from a players inventory
+     * @param Player $player
+     * @return Item|null null if the player does not have a valid key
+     */
+    public function getKeyFromPlayer(Player $player): ?Item {
+        $item = null;
+        foreach ($player->getInventory()->getContents() as $i) {
+            if ($this->isValidKey($i)) {
+                $item = $i;
+                break;
+            }
+        }
+
+        return $item;
     }
 
     /**

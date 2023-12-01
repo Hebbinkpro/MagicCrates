@@ -5,11 +5,12 @@ namespace Hebbinkpro\MagicCrates\commands\subcommands;
 
 
 use CortexPE\Commando\args\IntegerArgument;
+use CortexPE\Commando\args\TargetPlayerArgument;
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\args\CrateTypeArgument;
-use Hebbinkpro\MagicCrates\commands\args\TargetPlayerArgument;
 use Hebbinkpro\MagicCrates\crate\CrateType;
+use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 
@@ -22,11 +23,11 @@ class CrateKey extends BaseSubCommand
 
         if (!$sender instanceof Player) {
             if (!isset($args["player"])) {
-                $sender->sendMessage("[§6Magic§cCrates§r] §cUsage: /mc makekey <type> <amount> <player>");
+                $sender->sendMessage(MagicCrates::getPrefix()." §cUsage: /mc makekey <type> <amount> <player>");
                 return;
             }
             if (is_null($plugin->getServer()->getPlayerExact($args["player"]))) {
-                $sender->sendMessage("[§6Magic§cCrates§r] §cThe given player isn't online");
+                $sender->sendMessage(MagicCrates::getPrefix()." §cThe given player is not online");
                 return;
             }
         }
@@ -41,7 +42,7 @@ class CrateKey extends BaseSubCommand
             foreach ($types as $type) {
                 $msg = $msg . $type . ", ";
             }
-            $sender->sendMessage("[§6Magic§cCrates§r] §cThat isn't a valid crate type");
+            $sender->sendMessage(MagicCrates::getPrefix()." §cThat is not a valid crate type");
             $sender->sendMessage("§6Valid types:§r $msg");
             return;
         }
@@ -62,8 +63,8 @@ class CrateKey extends BaseSubCommand
 
                 $name = $player->getName();
                 $type = $args["type"];
-                $player->sendMessage("[§6Magic§cCrates§r] §aYou received the §e$type §r§acrate key");
-                $sender->sendMessage("[§6Magic§cCrates§r] §e$name §r§a received the §e$type §r§acrate key");
+                $player->sendMessage(MagicCrates::getPrefix()." §aYou received the §e$type §r§acrate key");
+                $sender->sendMessage(MagicCrates::getPrefix()." §e$name §r§a received the §e$type §r§acrate key");
                 return;
             }
         }
@@ -74,7 +75,7 @@ class CrateKey extends BaseSubCommand
             $sender->getInventory()->addItem($key);
         }
         $type = $args["type"];
-        $sender->sendMessage("[§6Magic§cCrates§r] §aYou received the crate key for the §e$type §r§acrate");
+        $sender->sendMessage(MagicCrates::getPrefix()." §aYou received the crate key for the §e$type §r§acrate");
     }
 
     /**
@@ -83,11 +84,11 @@ class CrateKey extends BaseSubCommand
     protected function prepare(): void
     {
 
-        $this->setPermission("magiccrates.cmd.makekey");
+        $this->setPermission("magiccrates.cmd.key");
 
         $this->registerArgument(0, new CrateTypeArgument("type"));
         $this->registerArgument(1, new IntegerArgument("amount", true));
-        $this->registerArgument(2, new TargetPlayerArgument("player", true));
+        $this->registerArgument(2, new TargetPlayerArgument(true, "player"));
 
 
     }

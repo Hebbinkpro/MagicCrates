@@ -1,0 +1,39 @@
+{
+  "name": "hebbinkpro/magiccrates",
+  "description": "Add customizable crates to your server.",
+  "license": "GPL-3.0-only",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Hebbinkpro"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "pocketmine/pocketmine-mp": "^5.0.0",
+    "muqsit/simple-packet-handler": "dev-pm5",
+    "vecnavium/formsui": "dev-master"
+  },
+  "require-dev": {
+    "paroxity/commando": "^3.1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Hebbinkpro\\MagicCrates\\": "src/Hebbinkpro/MagicCrates"
+    }
+  },
+  "repositories": {
+    "commando": {
+      "type": "package",
+      "package": {
+        "name": "paroxity/commando",
+        "version": "3.1.0",
+        "source": {
+          "url": "https://github.com/Paroxity/Commando.git",
+          "type": "git",
+          "reference": "master"
+        }
+      }
+    }
+  }
+}

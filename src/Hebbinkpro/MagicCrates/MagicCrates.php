@@ -20,7 +20,8 @@ use pocketmine\world\World;
 
 class MagicCrates extends PluginBase
 {
-    public const PREFIX = "§r[§6Magic§cCrates§r]";
+    private static string $prefix = "§r[§6Magic§cCrates§r]";
+    private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
 
     public const KEY_NBT_TAG = "magic-crates-key";
 
@@ -32,6 +33,14 @@ class MagicCrates extends PluginBase
     private static MagicCrates $instance;
 
     private array $notLoadedCrates = [];
+
+    public static function getPrefix(): string {
+        return self::$prefix;
+    }
+
+    public static function getKeyName(): string {
+        return self::$keyName;
+    }
 
     /**
      * Schedule the start crate animation task with the delay given in the config
@@ -64,6 +73,8 @@ class MagicCrates extends PluginBase
 
         // store the config
         $this->saveResource("config.yml");
+        self::$prefix = $this->getConfig()->get("prefix", self::$prefix);
+        self::$keyName = $this->getConfig()->get("key-prefix", self::$keyName);
 
         // load the types and created crates
         $this->loadCrateTypes();
@@ -71,7 +82,7 @@ class MagicCrates extends PluginBase
 
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
 
-        $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command"));
+        $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
     }
 
     private function loadCrateTypes(): void

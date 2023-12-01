@@ -75,6 +75,7 @@ class CrateReward
 
     /**
      * @param array{id: string, name?: string, amount?: int, lore?: string|string[], enchantments?: array{name: string, level: int}[]} $itemData
+     * @param string $errorMsg
      * @return Item|null
      */
     public static function decodeItem(array $itemData, string &$errorMsg = ""): ?Item
@@ -95,7 +96,7 @@ class CrateReward
                 // get the Customies item, and catch the error...
                 try {
                     $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
-                } catch (Exception $e) {
+                } catch (Exception) {
                     $item = null;
                 }
             }

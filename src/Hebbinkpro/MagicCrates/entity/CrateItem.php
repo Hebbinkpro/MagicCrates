@@ -67,7 +67,7 @@ class CrateItem extends Entity
             if ($owner instanceof Player) {
 
                 $owner->getInventory()->addItem($this->reward->getItem());
-                $owner->sendMessage(MagicCrates::PREFIX . " §aYou won §e" . $this->getNameTag());
+                $owner->sendMessage(MagicCrates::getPrefix() . " §aYou won §e" . $this->getNameTag());
 
                 $this->crateType->executeCommands($owner, $this->reward);
                 (new CrateRewardEvent($this->crate, $owner, $this->reward))->call();
@@ -124,13 +124,13 @@ class CrateItem extends Entity
         $networkSession = $player->getNetworkSession();
 
         $networkSession->sendDataPacket(AddItemActorPacket::create(
-            $this->getId(), //TODO: entity unique ID
+            $this->getId(),
             $this->getId(),
             ItemStackWrapper::legacy($networkSession->getTypeConverter()->coreItemStackToNet($this->reward->getItem())),
             $this->location->asVector3(),
             $this->getMotion(),
             $this->getAllNetworkData(),
-            false //TODO: I have no idea what this is needed for, but right now we don't support fishing anyway
+            false
         ));
     }
 
