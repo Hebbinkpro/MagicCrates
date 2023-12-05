@@ -99,7 +99,7 @@ class EventListener implements Listener
 
         PlayerData::getInstance()->setInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
 
-        $form = new CrateForm($this->plugin, $crate->getPos());
+        $form = new CrateForm($this->plugin, $crate->getLoc());
         $form->sendRemoveForm($player);
     }
 
@@ -113,10 +113,9 @@ class EventListener implements Listener
         }
 
         $type = $crate->getType();
-        $typeId = $type->getId();
 
         if (!$type->isValidKey($item)) {
-            $form = new CrateForm($this->plugin, $crate->getPos());
+            $form = new CrateForm($this->plugin, $crate->getLoc());
             $form->sendPreviewForm($player);
             return;
         }
@@ -139,7 +138,7 @@ class EventListener implements Listener
         $crate = Crate::getByPosition($block->getPosition());
 
         if ($player->hasPermission("magiccrates.break.remove") && $crate !== null) {
-            $form = new CrateForm($this->plugin, $crate->getPos());
+            $form = new CrateForm($this->plugin, $crate->getLoc());
             $form->sendRemoveForm($player);
             $e->cancel();
         }
@@ -147,9 +146,10 @@ class EventListener implements Listener
 
     public function onChestPair(ChestPairEvent $e): void
     {
-        $left = Crate::getByPosition($e->getLeft()->getPosition());
-        $right = Crate::getByPosition($e->getRight()->getPosition());
-        if ($left !== null || $right !== null) $e->cancel();
+        if (Crate::getByPosition($e->getLeft()->getPosition()) !== null ||
+            Crate::getByPosition($e->getRight()->getPosition()) !== null) {
+            $e->cancel();
+        }
     }
 
     public function onJoin(PlayerJoinEvent $e): void

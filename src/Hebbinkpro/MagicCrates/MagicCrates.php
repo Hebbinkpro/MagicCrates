@@ -112,14 +112,21 @@ class MagicCrates extends PluginBase
         }
 
         // decode all crates
+        $errorMsg = "";
         foreach ($crates as $cd) {
-            $crate = Crate::decode($cd ?? []);
+            $crate = Crate::decode($cd ?? [], $errorMsg);
             if ($crate === null) {
                 // store the crate so that it will not be lost when all crates are saved
                 $this->notLoadedCrates[] = $cd;
                 $this->getLogger()->warning("Could not load crate of type '{$cd["type"]}' in world '{$cd["world"]}' at '{$cd["x"]},{$cd["y"]},{$cd["z"]}'.");
+                $this->getLogger()->warning($errorMsg);
             }
         }
+
+        $total = sizeof($crates);
+        $loaded = $total - sizeof($this->notLoadedCrates);
+        if ($total == $loaded) $this->getLogger()->info("Loaded all crates");
+        else $this->getLogger()->info("Loaded $loaded out of $total crates");
     }
 
     public function onDisable(): void

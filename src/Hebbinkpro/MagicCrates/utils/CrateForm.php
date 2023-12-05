@@ -65,7 +65,12 @@ class CrateForm
             if (!is_bool($data)) return;
 
             if ($data) {
-                $crate = new Crate($this->pos, $this->type);
+                $crate = new Crate($this->pos, $this->pos->getWorld(), $this->type);
+                if (!Crate::cacheCrate($crate)) {
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cThere already exists a crate at this position");
+                    return;
+                }
+
                 $crate->showFloatingText();
                 $player->sendMessage(MagicCrates::getPrefix() . " §aThe {$crate->getType()->getName()}§r§a crate is created");
                 $this->plugin->saveCrates();
