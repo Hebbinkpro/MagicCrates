@@ -91,15 +91,6 @@ class Crate
     }
 
     /**
-     * Get the world name of the crates world
-     * @return string
-     */
-    public function getWorldName(): string
-    {
-        return $this->world;
-    }
-
-    /**
      * Add a crate to the cache so that it will be saved
      * @param Crate $crate
      * @return bool
@@ -118,6 +109,34 @@ class Crate
     }
 
     /**
+     * Get the world name of the crates world
+     * @return string
+     */
+    public function getWorldName(): string
+    {
+        return $this->world;
+    }
+
+    /**
+     * Get the position string used as array index
+     * @param Vector3 $pos
+     * @return string
+     */
+    public static function getPositionString(Vector3 $pos): string
+    {
+        return "{$pos->getFloorX()},{$pos->getFloorY()},{$pos->getFloorZ()}";
+    }
+
+    /**
+     * Get the Vector3 position of the crate
+     * @return Vector3
+     */
+    public function getPos(): Vector3
+    {
+        return $this->pos;
+    }
+
+    /**
      * Show all floating text particles in the world to the player
      * @param Player $player
      * @param World|null $world
@@ -130,6 +149,14 @@ class Crate
         foreach (self::getCratesInWorld($world) as $crate) {
             $crate->showFloatingText($player);
         }
+    }
+
+    /**
+     * @return World|null
+     */
+    public function getWorld(): ?World
+    {
+        return Server::getInstance()->getWorldManager()->getWorldByName($this->world);
     }
 
     /**
@@ -168,42 +195,6 @@ class Crate
     }
 
     /**
-     * Get the Vector3 position of the crate
-     * @return Vector3
-     */
-    public function getPos(): Vector3
-    {
-        return $this->pos;
-    }
-
-    /**
-     * Get the position string used as array index
-     * @param Vector3 $pos
-     * @return string
-     */
-    public static function getPositionString(Vector3 $pos): string
-    {
-        return "{$pos->getFloorX()},{$pos->getFloorY()},{$pos->getFloorZ()}";
-    }
-
-    /**
-     * Get the location of the crate
-     * @return Position
-     */
-    public function getLoc(): Position
-    {
-        return Position::fromObject($this->pos, $this->getWorld());
-    }
-
-    /**
-     * @return World|null
-     */
-    public function getWorld(): ?World
-    {
-        return Server::getInstance()->getWorldManager()->getWorldByName($this->world);
-    }
-
-    /**
      * Get a crate by its position
      * @param Position $pos
      * @return Crate|null
@@ -220,6 +211,15 @@ class Crate
     public static function getAllCrates(): array
     {
         return self::$crates;
+    }
+
+    /**
+     * Get the location of the crate
+     * @return Position
+     */
+    public function getLoc(): Position
+    {
+        return Position::fromObject($this->pos, $this->getWorld());
     }
 
     /**
@@ -256,7 +256,8 @@ class Crate
      * @param Item|null $item
      * @return void
      */
-    public function openWithKey(Player $player, Item $item = null): void {
+    public function openWithKey(Player $player, Item $item = null): void
+    {
         $inv = $player->getInventory();
 
         if ($item === null) $item = $this->getType()->getKeyFromPlayer($player);
@@ -284,6 +285,15 @@ class Crate
     }
 
     /**
+     * Get the crate type
+     * @return CrateType
+     */
+    public function getType(): CrateType
+    {
+        return $this->type;
+    }
+
+    /**
      * Open the crate
      * @param Player $player
      * @return void
@@ -308,15 +318,6 @@ class Crate
         (new CrateOpenEvent($this, $player))->call();
 
         MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $nbt));
-    }
-
-    /**
-     * Get the crate type
-     * @return CrateType
-     */
-    public function getType(): CrateType
-    {
-        return $this->type;
     }
 
     /**

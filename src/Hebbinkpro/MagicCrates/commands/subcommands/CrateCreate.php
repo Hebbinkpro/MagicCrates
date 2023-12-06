@@ -15,26 +15,26 @@ class CrateCreate extends BaseSubCommand
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         if (!$sender instanceof Player) {
-            $sender->sendMessage(MagicCrates::getPrefix()." §cUse this command in-game!");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cUse this command in-game!");
             return;
         }
 
         $action = PlayerData::getInstance()->getInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
 
         if ($action == MagicCrates::ACTION_CRATE_REMOVE) {
-            $sender->sendMessage(MagicCrates::getPrefix()." §cCrate remove mode is §aenabled§c! Disable the crate remove mode with '/mc remove' and try again");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cCrate remove mode is §aenabled§c! Disable the crate remove mode with '/mc remove' and try again");
             return;
         }
 
         if ($action == MagicCrates::ACTION_CRATE_CREATE) {
             PlayerData::getInstance()->setInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
-            $sender->sendMessage(MagicCrates::getPrefix()." §eCrate create mode §cdisabled");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate create mode §cdisabled");
             return;
         }
 
         if ($action == MagicCrates::ACTION_NONE) {
             PlayerData::getInstance()->setInt($sender, MagicCrates::ACTION_TAG, MagicCrates::ACTION_CRATE_CREATE);
-            $sender->sendMessage(MagicCrates::getPrefix()." §eCrate create mode §aenabled§e, click on a chest to create a crate");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate create mode §aenabled§e, click on a chest to create a crate");
         }
     }
 

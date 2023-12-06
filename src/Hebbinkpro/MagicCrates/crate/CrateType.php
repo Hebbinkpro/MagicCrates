@@ -167,8 +167,8 @@ class CrateType
     public function getCrateKey(): Item
     {
         $keyName = CrateCommandSender::prepare(MagicCrates::getKeyName(), [
-           "crate" => $this->getName(),
-           "crate_type" => $this->getId()
+            "crate" => $this->getName(),
+            "crate_type" => $this->getId()
         ]);
 
         $key = VanillaItems::PAPER();
@@ -181,21 +181,12 @@ class CrateType
     }
 
     /**
-     * Check if the given item is a valid key for this crate type
-     * @param Item $item the item to check
-     * @return bool true if it is valid
-     */
-    public function isValidKey(Item $item): bool {
-        return $item->getCount() >= 1 && $item->getTypeId() == ItemTypeIds::PAPER
-            && $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") === $this->getId();
-    }
-
-    /**
      * Get the key from a players inventory
      * @param Player $player
      * @return Item|null null if the player does not have a valid key
      */
-    public function getKeyFromPlayer(Player $player): ?Item {
+    public function getKeyFromPlayer(Player $player): ?Item
+    {
         $item = null;
         foreach ($player->getInventory()->getContents() as $i) {
             if ($this->isValidKey($i)) {
@@ -205,6 +196,17 @@ class CrateType
         }
 
         return $item;
+    }
+
+    /**
+     * Check if the given item is a valid key for this crate type
+     * @param Item $item the item to check
+     * @return bool true if it is valid
+     */
+    public function isValidKey(Item $item): bool
+    {
+        return $item->getCount() >= 1 && $item->getTypeId() == ItemTypeIds::PAPER
+            && $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") === $this->getId();
     }
 
     /**

@@ -12,6 +12,7 @@ use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\entity\CrateItem;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
+use JsonException;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
 use pocketmine\nbt\tag\CompoundTag;
@@ -20,25 +21,24 @@ use pocketmine\world\World;
 
 class MagicCrates extends PluginBase
 {
-    private static string $prefix = "§r[§6Magic§cCrates§r]";
-    private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
-
     public const KEY_NBT_TAG = "magic-crates-key";
-
     public const ACTION_TAG = "magic-crates-action";
     public const ACTION_NONE = 0;
     public const ACTION_CRATE_CREATE = 1;
     public const ACTION_CRATE_REMOVE = 2;
-
+    private static string $prefix = "§r[§6Magic§cCrates§r]";
+    private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
 
     private array $notLoadedCrates = [];
 
-    public static function getPrefix(): string {
+    public static function getPrefix(): string
+    {
         return self::$prefix;
     }
 
-    public static function getKeyName(): string {
+    public static function getKeyName(): string
+    {
         return self::$keyName;
     }
 
@@ -132,7 +132,11 @@ class MagicCrates extends PluginBase
 
         // remove the types from the config
         $this->getConfig()->remove("types");
-        $this->getConfig()->save();
+        try {
+            $this->getConfig()->save();
+        } catch (JsonException) {
+            $this->getLogger()->error("Cannot update the config.yml");
+        }
 
         // save the updated crate_types.json in pretty print
         file_put_contents($this->getDataFolder() . "crate_types.json", json_encode($crateTypes, JSON_PRETTY_PRINT));

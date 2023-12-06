@@ -3,7 +3,7 @@
         'name' => 'hebbinkpro/magiccrates',
         'pretty_version' => 'dev-MagicCrates',
         'version' => 'dev-MagicCrates',
-        'reference' => 'f907a57cf9d2f6c9dc20878d6a8ec2c92a801f05',
+        'reference' => '3e96464445a474a0944644ab499bad4f8a574d1e',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -37,7 +37,7 @@
         'hebbinkpro/magiccrates' => array(
             'pretty_version' => 'dev-MagicCrates',
             'version' => 'dev-MagicCrates',
-            'reference' => 'f907a57cf9d2f6c9dc20878d6a8ec2c92a801f05',
+            'reference' => '3e96464445a474a0944644ab499bad4f8a574d1e',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
