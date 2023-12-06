@@ -87,14 +87,55 @@ class MagicCrates extends PluginBase
 
     private function loadCrateTypes(): void
     {
+        // check if crate_types.json exists, otherwise load the file
+        $filePath = $this->getDataFolder() . "crate_types.json";
+        if (!is_file($filePath)) $this->saveResource("crate_types.json");
+
+        $file = file_get_contents($this->getDataFolder() . "crate_types.json");
+        $crateTypes = json_decode($file, true);
+
+        if ($crateTypes === null) {
+            $this->getLogger()->warning("crate_types.json is corrupted, cannot load the crate types!");
+            return;
+        }
+
+        $this->migrateCrateTypes($crateTypes);
+
         $errorMsg = "";
         // decode all crate types
-        foreach ($this->getConfig()->get("types") as $id => $type) {
+        foreach ($crateTypes as $id => $type) {
             $crateType = CrateType::decode($id, $type, $errorMsg);
             if ($crateType === null) {
                 $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
             } else $this->getLogger()->info("Loaded crate type: $id");
         }
+    }
+
+    /**
+     * Move all crate types from the config.yml to the crate_types.json
+     * @param array $crateTypes
+     * @return void
+     */
+    private function migrateCrateTypes(array $crateTypes): void
+    {
+        if (!$this->getConfig()->exists("types")) return;
+
+        $this->getLogger()->notice("Found crates inside the config.yml, migrating them to crate_types.json");
+        $this->getLogger()->notice("Please only create crates inside the crate_types.json file, as support for crates in the config.yml will be removed.");
+        foreach ($this->getConfig()->get("types") as $id => $type) {
+            if (isset($crateTypes[$id])) {
+                $this->getLogger()->warning("Crate with id '$id' already exists in crate_types.json, the current crate in crate_types.json will be overwritten");
+            }
+
+            $crateTypes[$id] = $type;
+        }
+
+        // remove the types from the config
+        $this->getConfig()->remove("types");
+        $this->getConfig()->save();
+
+        // save the updated crate_types.json in pretty print
+        file_put_contents($this->getDataFolder() . "crate_types.json", json_encode($crateTypes, JSON_PRETTY_PRINT));
     }
 
     /**

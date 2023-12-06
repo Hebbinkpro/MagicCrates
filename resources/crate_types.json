@@ -1,0 +1,36 @@
+{
+  "common": {
+    "name": "§eCommon §6Crate",
+    "rewards": [
+      {
+        "name": "Diamond",
+        "item": {
+          "id": "minecraft:diamond",
+          "name": "Common Diamond",
+          "amount": 1,
+          "lore": "Diamond from a crate",
+          "enchantments": [
+            {
+              "name": "efficiency",
+              "level": 1
+            }
+          ]
+        },
+        "commands": [
+          "msg {player} be carefully with this diamond!"
+        ],
+        "amount": 1
+      },
+      {
+        "name": "dirt",
+        "item": {
+          "id": "minecraft:dirt",
+          "amount": 2
+        }
+      }
+    ],
+    "commands": [
+      "say {player} won {reward} from a {crate_type} crate"
+    ]
+  }
+}

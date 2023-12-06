@@ -14,10 +14,10 @@ class MagicCratesCommand extends BaseCommand
 {
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
-        $sender->sendMessage("[§6Magic§cCrates§r] §eHelp:");
+        $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
         $sender->sendMessage("- /mc create => Create a crate");
         $sender->sendMessage("- /mc remove => Remove a crate");
-        $sender->sendMessage("- /mc makekey => Make a create key");
+        $sender->sendMessage("- /mc key => Make a crate key");
     }
 
     protected function prepare(): void

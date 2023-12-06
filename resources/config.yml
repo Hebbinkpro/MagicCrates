@@ -4,39 +4,3 @@ delay: 20
 prefix: "§r[§6Magic§cCrates§r]"
 # Prefix for a crate key item name
 key-name: "§r[§6Crate §cKey§r] §e{crate}"
-
-# Crate commands: these are the commands executed when you open a crate, or win a specified reward.
-# For commands, you can insert some basic values, like the name of the player or which reward the player gets
-# The options:
-#   - {player} - will be changed into the name of the player
-#   - {crate} - the name of the crate type (displayed above the crate)
-#   - {crate_type} - the id of the crate type
-#   - {reward} - the name of the reward
-# see the example below how to use them
-
-# A list of all your crate types
-types:
-  common:
-    name: "§eCommon §6Crate"
-    rewards:
-      - name: "Diamond"
-        item:
-          name: "Diamond"
-          id: "minecraft:diamond"
-          amount: 1
-          lore: "Diamond from a crate"
-          enchantments:
-            - name: "efficiency"
-              level: 1
-        commands:
-          - "msg {player} be carefull with this diamond!"
-        amount: 1
-
-      - name: "Dirt"
-        item:
-          id: "minecraft:dirt"
-          amount: 2
-        commands: [ ]
-        amount: 2
-    commands:
-      - "say {player} won {reward} from a {crate_type} crate"

@@ -44,6 +44,7 @@ class CrateType
     /**
      * @param string $id
      * @param array{name: string, rewards: array, commands: string[]} $data
+     * @param string $errorMsg
      * @return CrateType|null
      */
     public static function decode(string $id, array $data, string &$errorMsg = ""): ?CrateType
