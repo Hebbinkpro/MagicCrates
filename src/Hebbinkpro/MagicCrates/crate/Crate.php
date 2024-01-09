@@ -128,15 +128,6 @@ class Crate
     }
 
     /**
-     * Get the Vector3 position of the crate
-     * @return Vector3
-     */
-    public function getPos(): Vector3
-    {
-        return $this->pos;
-    }
-
-    /**
      * Show all floating text particles in the world to the player
      * @param Player $player
      * @param World|null $world
@@ -214,10 +205,10 @@ class Crate
     }
 
     /**
-     * Get the location of the crate
+     * Get the position of the crate
      * @return Position
      */
-    public function getLoc(): Position
+    public function getPos(): Position
     {
         return Position::fromObject($this->pos, $this->getWorld());
     }

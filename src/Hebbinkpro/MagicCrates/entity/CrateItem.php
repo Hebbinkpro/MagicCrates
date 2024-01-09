@@ -88,7 +88,7 @@ class CrateItem extends Entity
         $nbt->setShort("age", $this->age);
         $nbt->setString("owner", $this->owner);
         $nbt->setFloat("spawn-y", $this->spawnY);
-        $nbt->setString("crate-pos", serialize($this->crate->getPos()));
+        $nbt->setString("crate-pos", serialize($this->crate->getPos()->asVector3()));
         $nbt->setString("crate-type", $this->crateType->getId());
         $nbt->setString("reward", $this->reward->getName());
 

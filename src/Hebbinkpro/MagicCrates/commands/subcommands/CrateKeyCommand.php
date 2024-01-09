@@ -27,22 +27,20 @@ class CrateKeyCommand extends BaseSubCommand
             return;
         }
 
-        $type = CrateType::getById($args["type"]);
-
         // check if the crate type exists, you never know
-        if (CrateType::getById($type) === null) {
+        if (($type = CrateType::getById($args["type"])) === null) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type");
             return;
         }
 
         // get the amount of keys
-        if (isset($args["amount"])) $amount = 1;
+        if (!isset($args["amount"])) $amount = 1;
         else {
             $amount = $args["amount"];
 
             // negative or zero amount is given
             if ($amount <= 0) {
-                $sender->sendMessage(MagicCrates::getPrefix() . "§cInvalid amount, should be >= 1");
+                $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be >= 1");
                 return;
             }
         }
@@ -63,13 +61,13 @@ class CrateKeyCommand extends BaseSubCommand
             $this->giveKeys($player, $type, $amount);
 
             $name = $player->getName();
-            $player->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount §e$typeName §r§ key" . ($amount > 1 ? "s" : ""));
-            $sender->sendMessage(MagicCrates::getPrefix() . " §e$name §r§a received $amount §e$typeName §r§a key" . ($amount > 1 ? "s" : ""));
+            $player->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount $typeName §r§akey" . ($amount > 1 ? "s" : ""));
+            $sender->sendMessage(MagicCrates::getPrefix() . " §e$name received $amount $typeName §r§ekey" . ($amount > 1 ? "s" : ""));
             return;
         }
 
         $this->giveKeys($sender, $type, $amount);
-        $sender->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount §e$typeName §akey" . ($amount > 1 ? "s" : ""));
+        $sender->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount §e$typeName §r§akey" . ($amount > 1 ? "s" : ""));
     }
 
     /**

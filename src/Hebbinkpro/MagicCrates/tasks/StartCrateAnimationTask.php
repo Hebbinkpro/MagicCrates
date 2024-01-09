@@ -25,11 +25,12 @@ class StartCrateAnimationTask extends Task
 
     public function onRun(): void
     {
-        $itemEntity = new CrateItem(EntityDataHelper::parseLocation($this->nbt, $this->crate->getPos()->getWorld()), $this->nbt);
+        // we cannot spawn an item in an unloaded world
+        if (($world = $this->crate->getWorld()) === null) return;
 
-        if ($itemEntity instanceof CrateItem) {
-            $itemEntity->setNameTag($this->reward->getName());
-            $itemEntity->spawnToAll();
-        }
+        // create a new crate item
+        $crateItem = new CrateItem(EntityDataHelper::parseLocation($this->nbt, $world), $this->nbt);
+        $crateItem->setNameTag($this->reward->getName());
+        $crateItem->spawnToAll();
     }
 }
