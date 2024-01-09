@@ -311,7 +311,7 @@ class Crate
         $nbt->setString("crate-type", $this->type->getId());
         $nbt->setString("reward", $reward->getName());
 
-        $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening a §6{$this->type->getId()} §ecrate...");
+        $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");
         $this->opener = $player;
         $this->hideFloatingText();
 

@@ -25,7 +25,7 @@ class CrateTypeArgument extends StringEnumArgument
 
     public function getEnumName(): string
     {
-        return "crate type";
+        return "crate_type";
     }
 
     public function getEnumValues(): array

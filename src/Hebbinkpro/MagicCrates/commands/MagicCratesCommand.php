@@ -4,9 +4,9 @@
 namespace Hebbinkpro\MagicCrates\commands;
 
 use CortexPE\Commando\BaseCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreate;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateKey;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemove;
+use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreateCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemoveCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 
@@ -29,9 +29,9 @@ class MagicCratesCommand extends BaseCommand
         /** @var MagicCrates $plugin */
         $plugin = $this->getOwningPlugin();
 
-        $this->registerSubCommand(new CrateCreate($plugin, "create", "Create a crate"));
-        $this->registerSubCommand(new CrateRemove($plugin, "remove", "Remove a crate"));
-        $this->registerSubCommand(new CrateKey($plugin, "key", "Create a crate key", ["makekey"]));
+        $this->registerSubCommand(new CrateCreateCommand($plugin, "create", "Create a crate"));
+        $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Remove a crate"));
+        $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Create a crate key", ["makekey"]));
     }
 
 

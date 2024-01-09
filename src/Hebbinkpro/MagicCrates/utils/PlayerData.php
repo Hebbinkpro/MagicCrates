@@ -10,6 +10,11 @@ use pocketmine\utils\SingletonTrait;
  */
 class PlayerData
 {
+    public const ACTION_TAG = "magic-crates-action";
+    public const ACTION_NONE = 0;
+    public const ACTION_CRATE_CREATE = 1;
+    public const ACTION_CRATE_REMOVE = 2;
+
     use SingletonTrait;
 
     /** @var array<string, array<string, mixed>> */

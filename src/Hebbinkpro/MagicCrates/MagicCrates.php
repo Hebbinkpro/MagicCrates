@@ -17,15 +17,11 @@ use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\plugin\PluginBase;
+use pocketmine\Server;
 use pocketmine\world\World;
 
 class MagicCrates extends PluginBase
 {
-    public const KEY_NBT_TAG = "magic-crates-key";
-    public const ACTION_TAG = "magic-crates-action";
-    public const ACTION_NONE = 0;
-    public const ACTION_CRATE_CREATE = 1;
-    public const ACTION_CRATE_REMOVE = 2;
     private static string $prefix = "§r[§6Magic§cCrates§r]";
     private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
@@ -51,6 +47,20 @@ class MagicCrates extends PluginBase
     {
         $delay = self::$instance->getConfig()->get("delay");
         self::$instance->getScheduler()->scheduleDelayedTask($task, $delay);
+    }
+
+    /**
+     * Check if a plugin is enabled
+     * @param string $pluginName
+     * @return bool
+     */
+    public static function isPluginEnabled(string $pluginName): bool
+    {
+
+        $plManager = Server::getInstance()->getPluginManager();
+        $plugin = $plManager->getPlugin($pluginName);
+
+        return $plugin !== null && $plugin->isEnabled();
     }
 
     public function onLoad(): void
@@ -203,6 +213,4 @@ class MagicCrates extends PluginBase
         // store the crates
         file_put_contents($this->getDataFolder() . "crates.json", json_encode($crateData));
     }
-
-
 }

@@ -13,6 +13,8 @@ use pocketmine\player\Player;
 
 class CrateType
 {
+    public const KEY_NBT_TAG = "magic-crates-key";
+
     /** @var CrateType[] */
     private static array $crateTypes = [];
 
@@ -175,7 +177,7 @@ class CrateType
         $key->setCustomName($keyName);
         $key->setLore([MagicCrates::getPrefix()]);
         $key->addEnchantment(new EnchantmentInstance(VanillaEnchantments::UNBREAKING(), 1));
-        $key->getNamedTag()->setString(MagicCrates::KEY_NBT_TAG, $this->id);
+        $key->getNamedTag()->setString(CrateType::KEY_NBT_TAG, $this->id);
 
         return $key;
     }
@@ -206,7 +208,7 @@ class CrateType
     public function isValidKey(Item $item): bool
     {
         return $item->getCount() >= 1 && $item->getTypeId() == ItemTypeIds::PAPER
-            && $item->getNamedTag()->getString(MagicCrates::KEY_NBT_TAG, "") === $this->getId();
+            && $item->getNamedTag()->getString(CrateType::KEY_NBT_TAG, "") === $this->getId();
     }
 
     /**

@@ -29,9 +29,7 @@ class EventListener implements Listener
 
     public function onInteractChest(PlayerInteractEvent $e): void
     {
-        $player = $e->getPlayer();
         $block = $e->getBlock();
-        $item = $e->getItem();
 
         // when block isn't a chest or when it's a left click interaction return
         if (!$block instanceof Chest || $e->getAction() == PlayerInteractEvent::LEFT_CLICK_BLOCK) return;
@@ -43,10 +41,10 @@ class EventListener implements Listener
         // the crate isn't a TileChest, or it's a double chest
         if (!$tile instanceof TileChest) return;
 
+        $player = $e->getPlayer();
+        $playerAction = PlayerData::getInstance()->getInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
-        $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
-
-        if ($tile->isPaired() && $playerAction > MagicCrates::ACTION_NONE) {
+        if ($tile->isPaired() && $playerAction > PlayerData::ACTION_NONE) {
             $player->sendMessage(MagicCrates::getPrefix() . "§c You cannot interact with a paired chest!");
             $e->cancel();
             return;
@@ -55,20 +53,21 @@ class EventListener implements Listener
         $crate = Crate::getByPosition($block->getPosition());
 
         // check if player is creating a crate
-        if ($playerAction == MagicCrates::ACTION_CRATE_CREATE) {
+        if ($playerAction == PlayerData::ACTION_CRATE_CREATE) {
             $this->createCrate($player, $crate, $pos);
             $e->cancel();
             return;
         }
 
         // check if player is removing a crate
-        if ($playerAction == MagicCrates::ACTION_CRATE_REMOVE) {
+        if ($playerAction == PlayerData::ACTION_CRATE_REMOVE) {
             $this->removeCrate($player, $crate);
             $e->cancel();
             return;
         }
 
         if ($crate !== null) {
+            $item = $e->getItem();
             $this->openCrate($player, $crate, $item);
             $e->cancel();
         }
@@ -83,7 +82,7 @@ class EventListener implements Listener
             return;
         }
 
-        PlayerData::getInstance()->setInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+        PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
         $form = new CrateForm($this->plugin, $pos);
         $form->sendCreateForm($player);
@@ -97,7 +96,7 @@ class EventListener implements Listener
             return;
         }
 
-        PlayerData::getInstance()->setInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+        PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
         $form = new CrateForm($this->plugin, $crate->getLoc());
         $form->sendRemoveForm($player);
@@ -105,10 +104,9 @@ class EventListener implements Listener
 
     private function openCrate(Player $player, Crate $crate, Item $item): void
     {
-
         if ($crate->isOpen()) {
             $playerName = $crate->getOpener()->getName();
-            $player->sendMessage(MagicCrates::getPrefix() . " §cYou have to wait, §e$playerName §r§cis opening the crate");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou have to wait, §e$playerName §r§cis now opening the crate");
             return;
         }
 
@@ -126,15 +124,15 @@ class EventListener implements Listener
     public function onBlockBreak(BlockBreakEvent $e): void
     {
         $player = $e->getPlayer();
-        $block = $e->getBlock();
-        $playerAction = PlayerData::getInstance()->getInt($player, MagicCrates::ACTION_TAG, MagicCrates::ACTION_NONE);
+        $playerAction = PlayerData::getInstance()->getInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
-        if ($playerAction > MagicCrates::ACTION_NONE) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cYou can't break blocks while creating or removing a crate");
+        if ($playerAction > PlayerData::ACTION_NONE) {
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou can't break blocks while in crate create or remove mode");
             $e->cancel();
             return;
         }
 
+        $block = $e->getBlock();
         $crate = Crate::getByPosition($block->getPosition());
 
         if ($player->hasPermission("magiccrates.break.remove") && $crate !== null) {
@@ -146,6 +144,7 @@ class EventListener implements Listener
 
     public function onChestPair(ChestPairEvent $e): void
     {
+        // if the left or the right chest is a crate, cancel the event
         if (Crate::getByPosition($e->getLeft()->getPosition()) !== null ||
             Crate::getByPosition($e->getRight()->getPosition()) !== null) {
             $e->cancel();

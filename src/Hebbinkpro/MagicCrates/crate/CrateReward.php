@@ -4,12 +4,12 @@ namespace Hebbinkpro\MagicCrates\crate;
 
 use customiesdevs\customies\item\CustomiesItemFactory;
 use Exception;
+use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\block\Air;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\StringToEnchantmentParser;
 use pocketmine\item\Item;
 use pocketmine\item\StringToItemParser;
-use pocketmine\Server;
 
 class CrateReward
 {
@@ -90,9 +90,7 @@ class CrateReward
         // its not a vanilla item
         if ($item === null) {
             // check if Customies is enabled
-            $plManager = Server::getInstance()->getPluginManager();
-            $customies = $plManager->getPlugin("Customies");
-            if ($customies !== null && $plManager->isPluginEnabled($customies)) {
+            if (MagicCrates::isPluginEnabled("Customies")) {
                 // get the Customies item, and catch the error...
                 try {
                     $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
