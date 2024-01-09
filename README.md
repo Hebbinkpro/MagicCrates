@@ -1,4 +1,4 @@
-# MagicCrates [![](https://poggit.pmmp.io/ci.badge/Hebbinkpro/MagicCrates/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
+# MagicCrates [![](https://poggit.pmmp.io/shield.downloads/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
 Add customizable crates to your server.
 - Add as many crate types as you want
