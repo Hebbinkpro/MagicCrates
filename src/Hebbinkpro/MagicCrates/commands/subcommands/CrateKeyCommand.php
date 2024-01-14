@@ -47,6 +47,7 @@ class CrateKeyCommand extends BaseSubCommand
 
         // get the type name, used in the messages
         $typeName = $type->getName();
+        $s = ($amount > 1 ? "s" : "");
 
         if (isset($args["player"])) {
             // get the online player
@@ -58,30 +59,16 @@ class CrateKeyCommand extends BaseSubCommand
                 return;
             }
 
-            $this->giveKeys($player, $type, $amount);
+            $type->giveCrateKey($player, $amount);
 
             $name = $player->getName();
-            $player->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount $typeName §r§akey" . ($amount > 1 ? "s" : ""));
-            $sender->sendMessage(MagicCrates::getPrefix() . " §e$name received $amount $typeName §r§ekey" . ($amount > 1 ? "s" : ""));
+            $player->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount $typeName §r§akey$s");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §e$name received $amount $typeName §r§ekey$s");
             return;
         }
 
-        $this->giveKeys($sender, $type, $amount);
-        $sender->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount §e$typeName §r§akey" . ($amount > 1 ? "s" : ""));
-    }
-
-    /**
-     * Give keys to the specified player
-     * @param Player $player
-     * @param CrateType $type
-     * @param int $amount
-     * @return void
-     */
-    private function giveKeys(Player $player, CrateType $type, int $amount): void
-    {
-        $key = $type->getCrateKey();
-        $key->setCount($amount);
-        $player->getInventory()->addItem($key);
+        $type->giveCrateKey($sender, $amount);
+        $sender->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount §e$typeName §r§akey$s");
     }
 
     /**
@@ -95,7 +82,5 @@ class CrateKeyCommand extends BaseSubCommand
         $this->registerArgument(0, new CrateTypeArgument("type"));
         $this->registerArgument(1, new IntegerArgument("amount", true));
         $this->registerArgument(2, new TargetPlayerArgument(true, "player"));
-
-
     }
 }

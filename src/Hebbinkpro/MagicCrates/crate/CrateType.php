@@ -201,6 +201,18 @@ class CrateType
     }
 
     /**
+     * Give crate keys of this crate type to the specified player
+     * @param Player $player
+     * @param int $amount
+     * @return void
+     */
+    public function giveCrateKey(Player $player, int $amount): void {
+        $key = $this->getCrateKey();
+        $key->setCount($amount);
+        $player->getInventory()->addItem($key);
+    }
+
+    /**
      * Check if the given item is a valid key for this crate type
      * @param Item $item the item to check
      * @return bool true if it is valid

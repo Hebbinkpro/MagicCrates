@@ -20,6 +20,9 @@ permissions:
   magiccrates.cmd.key:
     default: op
     description: Access to the /magiccrates key command
+  magiccrates.cmd.key.all:
+    default: op
+    description: Access to the /magiccrates keyall command
   magiccrates.break:
     default: false
   magiccrates.break.remove:
