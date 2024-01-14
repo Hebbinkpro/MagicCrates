@@ -5,6 +5,7 @@ namespace Hebbinkpro\MagicCrates\commands;
 
 use CortexPE\Commando\BaseCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreateCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyAllCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemoveCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
@@ -15,9 +16,12 @@ class MagicCratesCommand extends BaseCommand
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
-        $sender->sendMessage("- /mc create => Create a crate");
-        $sender->sendMessage("- /mc remove => Remove a crate");
-        $sender->sendMessage("- /mc key => Make a crate key");
+        $sender->sendMessage("- /mc create => Toggle crate create mode");
+        $sender->sendMessage("- /mc remove => Toggle crate remove mode");
+        $sender->sendMessage("- /mc key <type> [amount] [player] => Give a crate key to a player");
+        $sender->sendMessage("- /mc keyall <type> [amount] => Give crate keys to all online players");
+
+
     }
 
     protected function prepare(): void
@@ -29,9 +33,10 @@ class MagicCratesCommand extends BaseCommand
         /** @var MagicCrates $plugin */
         $plugin = $this->getOwningPlugin();
 
-        $this->registerSubCommand(new CrateCreateCommand($plugin, "create", "Create a crate"));
-        $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Remove a crate"));
-        $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Create a crate key", ["makekey"]));
+        $this->registerSubCommand(new CrateCreateCommand($plugin, "create", "Toggle crate create mode"));
+        $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Toggle crate remove mode"));
+        $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Give a crate key to a player"));
+        $this->registerSubCommand(new CrateKeyAllCommand($plugin, "keyall", "Give crate keys to all online players"));
     }
 
 
