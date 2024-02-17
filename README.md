@@ -20,21 +20,13 @@ Add customizable crates to your server.
 
 Command aliases: `/magiccrates`, `/mc`
 
-| Command                                           | Description      | Permission-            |
-|---------------------------------------------------|------------------|------------------------|
-| `/magiccrates create`                             | Create a crate   | magiccrates.cmd.create |
-| `/magiccrates remove`                             | Remove a crate   | magiccrates.cmd.remove |
-| `/magiccrates key <crate_type> [amount] [player]` | Make a crate key | magiccrates.cmd.key    |
-
-### Permissions
-
-| Permission                 | Description                                 | Default |
-|----------------------------|---------------------------------------------|---------|
-| `magiccrates.cmd`          | Access to the `/magiccrates` command        | OP      |
-| `magiccrates.cmd.create`   | Access to the `/magiccrates create` command | OP      |
-| `magiccrates.cmd.remove`   | Access to the `/magiccrates remove` command | OP      |
-| `magiccrates.cmd.key`      | Access to the `/magiccrates key` command    | OP      |
-| `magiccrates.break.remove` | Permission to remove a crate by breaking it | OP      |
+| Command                                           | Description                            | Permission-             |
+|---------------------------------------------------|----------------------------------------|-------------------------|
+| `/magiccrates`                                    | MagicCrates Command                    | magiccrates.cmd         |
+| `/magiccrates create`                             | Create a crate                         | magiccrates.cmd.create  |
+| `/magiccrates remove`                             | Remove a crate                         | magiccrates.cmd.remove  |
+| `/magiccrates key <crate_type> [amount] [player]` | Give a crate key to a player           | magiccrates.cmd.key     |
+| `/magiccrates keyall <crate_type> [amount]`       | Give a crate key to all online players | magiccrates.cmd.key.all |
 
 ### Create a new crate
 
@@ -81,16 +73,14 @@ player or all players.<br>
 Crate rewards have to be added in [crate_types.json](#crate_typesjson), and there you can find more information about
 creating the rewards.
 
-## Plugin Data
-
-### config.yml
+## Config
 
 - `delay` The delay in ticks before the crate opening animation starts
 - `prefix`   - The prefix in front of all messages the plugin sends
 - `key-name` - The name format used for all the crate keys
 - `save-data-ticks` - The amount of ticks after which all data (crates and rewarded players) gets stored
 
-#### Default values
+### Default values
 ```yml
 delay: 20
 prefix: "§r[§6Magic§cCrates§r]"
@@ -98,15 +88,60 @@ key-name: "§r[§6Crate §cKey§r] §e{crate}"
 save-data-ticks: 6000
 ```
 
-### crate_types.json
+## Data
 
-This is de file containing all crate types, including the rewards.
+All data of the plugin is (currently) stored in JSON files, but only the following file is safe to edit:
+
+- `crate_types.json` - Stores all your crate types
+  It is not recommended to touch the other JSON files, as this can break the plugin:
+- `crates.json` - Stores all crates you have created on your server with their position, world and crate type
+- `rewarded_players.json` - Stores the amount of dynamic rewards a player has received
+
+## Changelogs
+
+List of most changes in the new version (v3.0.0)
+
+- \+ Added reward id's
+- \+ Added dynamic rewards
+- \+ Added `keyall` command
+- \+ Improved the crate opening animation
+  - The chest will now open, and a sound will be played
+  - If there are multiple items inside the reward, all items will hover out of the chest
+  - Command only rewards will now display a command block as item
+- \| Deprecated rewards without ID's
+- \- Removed crate type yaml->json conversion for plugins before 2.2.1
+
+## Todo
+
+- In-game UI for managing crate types
+
+## Credits
+
+- This plugin uses [Commando](https://github.com/Paroxity/Commando) and [FormsUI](https://github.com/Vecnavium/FormsUI)
+
+# Documentation
+
+## Permissions
+
+| Permission                 | Description                                 | Default |
+|----------------------------|---------------------------------------------|---------|
+| `magiccrates.cmd`          | Access to the `/magiccrates` command        | OP      |
+| `magiccrates.cmd.create`   | Access to the `/magiccrates create` command | OP      |
+| `magiccrates.cmd.remove`   | Access to the `/magiccrates remove` command | OP      |
+| `magiccrates.cmd.key`      | Access to the `/magiccrates key` command    | OP      |
+| `magiccrates.cmd.key.all`  | Access to the `/magiccrates keyall` command | OP      |
+| `magiccrates.break.remove` | Permission to remove a crate by breaking it | OP      |
+
+## Crate Types
+
+The `crate_types.json` file contains all crate types, including the rewards.
+You can find all the specifications about how to create your own custom crate types below.
 
 _If there is something wrong with the file (e.g. invalid json, a type is missing required values, or invalid data values
 are given)
 the plugin will notify you in the server console on startup indicating what went wrong, so that you can fix the error._
 
-#### Crate Types
+### Crate Types
 
 The basic structure in `crate_types.json` is defined like the following:
 ```json5
@@ -118,21 +153,24 @@ The basic structure in `crate_types.json` is defined like the following:
 
 You can add as many crate types (`<type_id>: CrateType`) to this file as you need, but every `CrateType` needs an ID!
 
-#### Crate Type
+### Crate Type
 ```json5
 {
-  "name": string,
   // the name shown above the crate
-  "rewards": CrateReward[]          // the crate rewards
-"commands": Command[]             //  commands executed after a player opened the crate
-"replacement": CrateReward|string // [optional] a reward or reward id that should be used as the replacement reward
+  "name": string,
+  // the crate rewards
+  "rewards": CrateReward[],
+//  commands executed after a player opened the crate
+"commands": Command[],
+// [optional] a reward or reward id that should be used as the replacement reward
+"replacement": CrateReward|string
 }
 ```
 
 The replacement defined in the `CrateType` is used as a global replacer for all `DynamicCrateReward`'s (unless there is
 an replacement specified in the `DynamicCrateReward`).
 
-##### Registration of Crate Rewards
+#### Registration of Crate Rewards
 
 Since v3.0.0, it is possible to register crate rewards with unique ID's. It is recommended to use unique ID's as those
 will prevent issues which can occur when renaming dynamic rewards without ID.<br>
@@ -176,19 +214,22 @@ A Command will look something like this: `"say {player} received {reward} from a
 Executing this command will result in `say Hebbinkpro received Unique Diamond from a Rare Crate` when Hebbinkpro opened
 a Rare Crate and won a Unique Diamond.
 
-#### Crate Reward
+### Crate Reward
 
 This is the data structure of a `CrateReward`
 
 ```json5
 {
-  "name": string,
   // name of the reward
-  "amount": int,
+  "name": string,
   // amount of this reward inside the crate.
-  "items": Item[],              // the item(s) the player gets
-"commands": string[], // commands executed when the player wins this reward
-"icon": string                // [optional] path/url to an image that will be displayed in the crate UI
+  "amount": int,
+  // the item(s) the player gets
+  "items": Item[],
+// commands executed when the player wins this reward
+"commands": string[],
+// [optional] path/url to an image that will be displayed in the crate UI
+"icon": string
 }
 ```
 
@@ -197,22 +238,26 @@ At least one item or command should be given
 This is the data structure of a `DynamicCrateReward`
 ```json5
 {
-  "name": string,
   // name of the reward
-  "amount": int,
+  "name": string,
   // [optional] amount of this reward inside the crate.
-  "player_max": int,
+  "amount": int,
   // [optional] maximum amount of this reward the player can get
-  "global_max": int,
+  "player_max": int,
   // [optional] maximum amount of this reward that can be awarded server wide
-  "replace_amount": int,
+  "global_max": int,
   // [optional] amount of the replacement reward inside the crate
-  "replace": bool,
+  "replace_amount": int,
   // [optional] if the reward should be replaced by a replacment reward when the maximum is reached
-  "items": Item[],                  // the item(s) the player gets
-"commands": string[], // commands executed when the player wins this reward
-"icon": string, // [optional] path/url to an image that will be displayed in the crate UI
-"replacement": CrateReward|string // [optional] a reward or reward id that should be used as the replacement reward
+  "replace": bool,
+  // the item(s) the player gets
+  "items": Item[],
+// commands executed when the player wins this reward
+"commands": string[],
+// [optional] path/url to an image that will be displayed in the crate UI
+"icon": string,
+// [optional] a reward or reward id that should be used as the replacement reward
+"replacement": CrateReward|string
 }
 ```
 
@@ -229,7 +274,7 @@ The dynamic reward is a more complex version of the default reward.
 
 WARNING You can only use a normal `CrateReward` as a replacement reward.
 
-##### Icon
+#### Icon
 
 Icons are used for the UI when you interact with a crate without a key. In this UI, all items available in the chest are
 displayed with their icon.<br>
@@ -237,36 +282,38 @@ By default, the icon of the rewarded item will be displayed, but you can customi
 You can use minecraft textures, in this case you only have to provide the path that points to a texture inside
 the [texture pack](https://github.com/mojang/bedrock-samples) (e.g. `textures/items/diamond` or `textures/blocks/dirt`)
 
-#### Item
+### Item
 
 This is the data structure of an `Item` inside a `CrateReward`.<br>
 Items registered using Customies are also supported, but make sure you identify them correctly.
 
 ```json5
 {
-  "id": string,
   // id of the item (e.g. minecraft:dirt or customies:example)
-  "name": string,
+  "id": string,
   // [optional] custom name of the item
-  "amount": int,
+  "name": string,
   // [optional] amount of the item the player will receive
+  "amount": int,
+  // [optional] add one or more lines of lore to the item
   "lore": string
   |
-  string[],      // [optional] add one or more lines of lore to the item
-"enchantments": Enchantment[] // [optional] list of enchantments applied to the item
+  string[],
+// [optional] list of enchantments applied to the item
+"enchantments": Enchantment[]
 }
 ```
 
-#### Enchantment
+### Enchantment
 
 This is the data structure of an `Enchantment` inside an `Item`
 
 ```json5
 {
-  "name": string,
   // name of the enchantment
-  "level": int
+  "name": string,
   // level of the enchantment
+  "level": int
 }
 ```
 
@@ -401,15 +448,3 @@ If a player opens this crate:
 - If the player has already received 1x `shard`, the shard is replaced by 10x `dirt` (`replace_amount`x `replacement`)
   - The crate now contains 50x `dirt` and no shards
 
-### crates.json
-
-This file contains all the crates created on your server.
-Do not change the content of this file, otherwise it is possible to break the plugin.
-
-### rewarded_players.json
-
-This file contains all the rewards a player has received and is used for unique crates
-
-## Credits
-
-- This plugin uses [Commando](https://github.com/Paroxity/Commando) and [FormsUI](https://github.com/Vecnavium/FormsUI)
