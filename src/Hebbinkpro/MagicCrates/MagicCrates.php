@@ -152,7 +152,7 @@ class MagicCrates extends PluginBase
         $this->loadCrateTypes();
         $this->loadCrates();
 
-        $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
 

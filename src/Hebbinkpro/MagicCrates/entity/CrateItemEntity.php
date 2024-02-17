@@ -37,7 +37,6 @@ use pocketmine\world\sound\Sound;
 class CrateItemEntity extends Entity
 {
     public const Y_DIFF = 0.75;
-    public const Y_REVEAL = 1;
     public const Y_DEST = 2;
 
     public float $width = 0.25;

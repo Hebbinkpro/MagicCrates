@@ -36,13 +36,6 @@ use pocketmine\world\Position;
 
 class EventListener implements Listener
 {
-    private MagicCrates $plugin;
-
-    public function __construct(MagicCrates $plugin)
-    {
-        $this->plugin = $plugin;
-    }
-
     public function onInteractChest(PlayerInteractEvent $e): void
     {
         $block = $e->getBlock();

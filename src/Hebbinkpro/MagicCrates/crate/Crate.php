@@ -245,16 +245,6 @@ class Crate
     }
 
     /**
-     * Change the crate opener
-     * @param Player|null $player
-     * @return void
-     */
-    public function setOpener(?Player $player): void
-    {
-        $this->opener = $player;
-    }
-
-    /**
      * Check if the crate is open
      * @return bool
      */

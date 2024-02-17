@@ -36,8 +36,6 @@ class MagicCratesCommand extends BaseCommand
         $sender->sendMessage("- /mc remove => Toggle crate remove mode");
         $sender->sendMessage("- /mc key <type> [amount] [player] => Give a crate key to a player");
         $sender->sendMessage("- /mc keyall <type> [amount] => Give crate keys to all online players");
-
-
     }
 
     protected function prepare(): void
