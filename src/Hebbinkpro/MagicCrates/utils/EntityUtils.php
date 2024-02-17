@@ -25,9 +25,16 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\DoubleTag;
 use pocketmine\nbt\tag\FloatTag;
 use pocketmine\nbt\tag\ListTag;
+use pocketmine\network\mcpe\convert\ItemTranslator;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 
 class EntityUtils
 {
+    /**
+     * The network ID of the Command Block
+     */
+    public const COMMAND_BLOCK_NETWORK_ID = 137;
+
     /**
      * Helper function which creates minimal NBT needed to spawn an entity.
      */
@@ -48,5 +55,24 @@ class EntityUtils
                 new FloatTag($yaw),
                 new FloatTag($pitch)
             ]));
+    }
+
+    /**
+     * Create a fake item stack with a given network ID which the client can recognize.
+     * @param int $networkId
+     * @return ItemStack
+     */
+    public static function getFakeItemStack(int $networkId): ItemStack
+    {
+        return new ItemStack(
+            $networkId,
+            0,
+            1,
+            ItemTranslator::NO_BLOCK_RUNTIME_ID,
+            new CompoundTag(),
+            [],
+            [],
+            null
+        );
     }
 }

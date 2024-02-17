@@ -107,12 +107,24 @@ class CrateType
             }
         }
 
+        $commands = $data["commands"] ?? [];
+
+        // we cannot have a type without rewards
+        if (count($rewards) == 0 && count($commands) == 0) {
+            $errorMsg = "No rewards or commands given.";
+            return null;
+        }
+
         // get the replacement to use for all rewards in this type
         $typeReplacement = null;
         if (isset($data["replacement"])) {
             if (is_string($data["replacement"])) {
                 $typeReplacement = $rewards[$data["replacement"]] ?? null;
-                $errorMsg = "Given reward does not exist.";
+
+                if ($typeReplacement === null) {
+                    $errorMsg = "Given replacement reward does not exist.";
+                    return null;
+                }
             } else if (is_array($data["replacement"])) {
                 $typeReplacement = CrateReward::parse($id, $data["replacement"], $errorMsg, false);
 
@@ -148,14 +160,6 @@ class CrateType
 
             // create a new instance for the replacement with the same amount as the original reward
             $replacements[$rewardId] = $replacement->setAmount($reward->getAmount());
-        }
-
-        $commands = $data["commands"] ?? [];
-
-        // we cannot have a type without rewards
-        if (count($rewards) == 0 && count($commands) == 0) {
-            $errorMsg = "No rewards or commands given.";
-            return null;
         }
 
         return new CrateType($id, $typeName, $rewards, $commands, $replacements);

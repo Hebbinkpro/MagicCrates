@@ -23,7 +23,6 @@ use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateReward;
 use Hebbinkpro\MagicCrates\entity\CrateItemEntity;
 use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
-use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\utils\EntityUtils;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\item\Item;
@@ -50,8 +49,7 @@ class StartCrateAnimationTask extends Task
         if (($world = $this->crate->getWorld()) === null || !$world->isLoaded()) return;
 
         if (sizeof($this->reward->getItems()) == 0) {
-            $item = MagicCrates::getCommandBlock()->asItem();
-            $this->spawnReward($item);
+            $this->spawnReward(null);
             return;
         }
 
@@ -64,10 +62,10 @@ class StartCrateAnimationTask extends Task
 
     /**
      * Spawn a Reward Crate Item entity which gives the player the reward
-     * @param Item $displayItem
+     * @param Item|null $displayItem
      * @return void
      */
-    private function spawnReward(Item $displayItem): void
+    private function spawnReward(?Item $displayItem): void
     {
         // set some reward exclusive tags
         $nbt = $this->getNbt($displayItem);
@@ -80,21 +78,23 @@ class StartCrateAnimationTask extends Task
 
     /**
      * Construct the NBT required for a CrateItemEntity
-     * @param Item $displayItem
+     * @param Item|null $displayItem
      * @param int $itemCount
      * @return CompoundTag
      */
-    private function getNbt(Item $displayItem, int $itemCount = 0): CompoundTag
+    private function getNbt(?Item $displayItem, int $itemCount = 0): CompoundTag
     {
         $pos = $this->crate->getPos();
-        $spawnPos = $pos->add(0.5, $itemCount == 0 ? 0 : -(CrateItemEntity::Y_DIFF * $itemCount), 0.5);
+        $spawnPos = $pos->add(0.5, 0, 0.5);
 
         $nbt = EntityUtils::createBaseNBT($spawnPos);
         $nbt->setString("owner", $this->player->getName());
         $nbt->setFloat("spawn-y", $spawnPos->getY());
         $nbt->setString("crate-pos", serialize($pos->asVector3()));
-        $nbt->setTag("display-item", $displayItem->nbtSerialize());
         $nbt->setInt("item-count", $itemCount);
+
+        // only set the display item if it exists
+        if ($displayItem !== null) $nbt->setTag("display-item", $displayItem->nbtSerialize());
 
         return $nbt;
     }

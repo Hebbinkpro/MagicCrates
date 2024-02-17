@@ -30,15 +30,8 @@ use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\tasks\StoreDataTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
-use pocketmine\block\Block;
-use pocketmine\block\BlockBreakInfo;
-use pocketmine\block\BlockIdentifier;
-use pocketmine\block\BlockTypeIds;
-use pocketmine\block\BlockTypeInfo;
-use pocketmine\block\RuntimeBlockStateRegistry;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
-use pocketmine\item\StringToItemParser;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
@@ -49,7 +42,6 @@ class MagicCrates extends PluginBase
     private static string $prefix = "§r[§6Magic§cCrates§r]";
     private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
-    private ?Block $commandBlock = null;
 
     private array $notLoadedCrates = [];
     /** @var array<string, array<string, array<string, int>>> */
@@ -104,33 +96,12 @@ class MagicCrates extends PluginBase
         StoreDataTask::updateRewardedPlayers();
     }
 
-    /**
-     * Get a Command Block
-     * @return Block|null
-     */
-    public static function getCommandBlock(): ?Block
-    {
-        $block = self::$instance->commandBlock;
-        if ($block === null) return null;
-        return clone $block;
-    }
-
     public function onLoad(): void
     {
         // register the crate item entity
         EntityFactory::getInstance()->register(CrateRewardItemEntity::class, function (World $world, CompoundTag $nbt): CrateRewardItemEntity {
             return new CrateRewardItemEntity(EntityDataHelper::parseLocation($nbt, $world), $nbt);
         }, ['CrateItem']);
-
-        // register a command block
-        $this->commandBlock = new Block(new BlockIdentifier(BlockTypeIds::newId()), "Command Block", new BlockTypeInfo(new BlockBreakInfo(0)));
-        RuntimeBlockStateRegistry::getInstance()->register($this->commandBlock);
-
-        // only register the command block when it isn't already registered
-        $itemParser = StringToItemParser::getInstance();
-        if ($itemParser->parse("minecraft:command_block") === null) {
-            $itemParser->registerBlock("minecraft:command_block", fn(): Block => clone $this->commandBlock);
-        }
     }
 
     /**
