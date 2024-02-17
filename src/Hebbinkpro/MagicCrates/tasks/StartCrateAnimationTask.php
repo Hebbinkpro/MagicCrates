@@ -21,32 +21,96 @@ namespace Hebbinkpro\MagicCrates\tasks;
 
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateReward;
-use Hebbinkpro\MagicCrates\entity\CrateItem;
+use Hebbinkpro\MagicCrates\entity\CrateItemEntity;
+use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
+use Hebbinkpro\MagicCrates\MagicCrates;
+use Hebbinkpro\MagicCrates\utils\EntityUtils;
 use pocketmine\entity\EntityDataHelper;
+use pocketmine\item\Item;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
 
 class StartCrateAnimationTask extends Task
 {
     private Crate $crate;
     private CrateReward $reward;
-    private CompoundTag $nbt;
+    private Player $player;
 
-    public function __construct(Crate $crate, CrateReward $reward, CompoundTag $nbt)
+    public function __construct(Crate $crate, CrateReward $reward, Player $player)
     {
         $this->crate = $crate;
         $this->reward = $reward;
-        $this->nbt = $nbt;
+        $this->player = $player;
     }
 
     public function onRun(): void
     {
         // we cannot spawn an item in an unloaded world
-        if (($world = $this->crate->getWorld()) === null) return;
+        if (($world = $this->crate->getWorld()) === null || !$world->isLoaded()) return;
+
+        if (sizeof($this->reward->getItems()) == 0) {
+            $item = MagicCrates::getCommandBlock()->asItem();
+            $this->spawnReward($item);
+            return;
+        }
+
+        // spawn a crate item entity for all items
+        foreach ($this->reward->getItems() as $i => $item) {
+            if ($i == 0) $this->spawnReward($item);
+            else $this->spawnItem($item, $i);
+        }
+    }
+
+    /**
+     * Spawn a Reward Crate Item entity which gives the player the reward
+     * @param Item $displayItem
+     * @return void
+     */
+    private function spawnReward(Item $displayItem): void
+    {
+        // set some reward exclusive tags
+        $nbt = $this->getNbt($displayItem);
+        $nbt->setString("reward", $this->reward->getId());
 
         // create a new crate item
-        $crateItem = new CrateItem(EntityDataHelper::parseLocation($this->nbt, $world), $this->nbt);
-        $crateItem->setNameTag($this->reward->getName());
+        $crateItem = new CrateRewardItemEntity(EntityDataHelper::parseLocation($nbt, $this->crate->getWorld()), $nbt);
+        $crateItem->spawnToAll();
+    }
+
+    /**
+     * Construct the NBT required for a CrateItemEntity
+     * @param Item $displayItem
+     * @param int $itemCount
+     * @return CompoundTag
+     */
+    private function getNbt(Item $displayItem, int $itemCount = 0): CompoundTag
+    {
+        $pos = $this->crate->getPos();
+        $spawnPos = $pos->add(0.5, $itemCount == 0 ? 0 : -(CrateItemEntity::Y_DIFF * $itemCount), 0.5);
+
+        $nbt = EntityUtils::createBaseNBT($spawnPos);
+        $nbt->setString("owner", $this->player->getName());
+        $nbt->setFloat("spawn-y", $spawnPos->getY());
+        $nbt->setString("crate-pos", serialize($pos->asVector3()));
+        $nbt->setTag("display-item", $displayItem->nbtSerialize());
+        $nbt->setInt("item-count", $itemCount);
+
+        return $nbt;
+    }
+
+    /**
+     * Spawn a default Crate Item entity
+     * @param Item $displayItem
+     * @param int $itemCount
+     * @return void
+     */
+    private function spawnItem(Item $displayItem, int $itemCount): void
+    {
+
+        $nbt = $this->getNbt($displayItem, $itemCount);
+
+        $crateItem = new CrateItemEntity(EntityDataHelper::parseLocation($nbt, $this->crate->getWorld()), $nbt);
         $crateItem->spawnToAll();
     }
 }

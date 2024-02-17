@@ -120,6 +120,6 @@ class PlayerData
      */
     public function has(Player $player, string $key): bool
     {
-        return isset($this->values[$key]) && isset($this->values[$key][$player->getName()]);
+        return isset($this->values[$key][$player->getName()]);
     }
 }

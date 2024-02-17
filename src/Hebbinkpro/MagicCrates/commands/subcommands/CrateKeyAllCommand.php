@@ -21,6 +21,7 @@ namespace Hebbinkpro\MagicCrates\commands\subcommands;
 
 use CortexPE\Commando\args\IntegerArgument;
 use CortexPE\Commando\BaseSubCommand;
+use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\args\CrateTypeArgument;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\MagicCrates;
@@ -29,15 +30,6 @@ use pocketmine\Server;
 
 class CrateKeyAllCommand extends BaseSubCommand
 {
-    protected function prepare(): void
-    {
-
-        $this->setPermission("magiccrates.cmd.key.all");
-
-        $this->registerArgument(0, new CrateTypeArgument("type"));
-        $this->registerArgument(1, new IntegerArgument("amount", true));
-    }
-
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         // check if the crate type exists, you never know
@@ -68,5 +60,17 @@ class CrateKeyAllCommand extends BaseSubCommand
         }
 
         $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players received $amount $typeName §r§ekey$s");
+    }
+
+    /**
+     * @throws ArgumentOrderException
+     */
+    protected function prepare(): void
+    {
+
+        $this->setPermission("magiccrates.cmd.key.all");
+
+        $this->registerArgument(0, new CrateTypeArgument("type"));
+        $this->registerArgument(1, new IntegerArgument("amount", true));
     }
 }

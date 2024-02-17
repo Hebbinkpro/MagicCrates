@@ -4,3 +4,5 @@ delay: 20
 prefix: "§r[§6Magic§cCrates§r]"
 # Prefix for a crate key item name
 key-name: "§r[§6Crate §cKey§r] §e{crate}"
+# The amount of ticks after which all data gets saved
+save-data-ticks: 6000

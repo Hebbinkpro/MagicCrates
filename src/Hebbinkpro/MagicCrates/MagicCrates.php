@@ -25,12 +25,20 @@ use CortexPE\Commando\PacketHooker;
 use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
-use Hebbinkpro\MagicCrates\entity\CrateItem;
+use Hebbinkpro\MagicCrates\crate\DynamicCrateReward;
+use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
+use Hebbinkpro\MagicCrates\tasks\StoreDataTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
-use JsonException;
+use pocketmine\block\Block;
+use pocketmine\block\BlockBreakInfo;
+use pocketmine\block\BlockIdentifier;
+use pocketmine\block\BlockTypeIds;
+use pocketmine\block\BlockTypeInfo;
+use pocketmine\block\RuntimeBlockStateRegistry;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
+use pocketmine\item\StringToItemParser;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
@@ -41,8 +49,11 @@ class MagicCrates extends PluginBase
     private static string $prefix = "§r[§6Magic§cCrates§r]";
     private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
+    private ?Block $commandBlock = null;
 
     private array $notLoadedCrates = [];
+    /** @var array<string, array<string, array<string, int>>> */
+    private array $rewardedPlayers = [];
 
     public static function getPrefix(): string
     {
@@ -79,12 +90,56 @@ class MagicCrates extends PluginBase
         return $plugin !== null && $plugin->isEnabled();
     }
 
+    /**
+     * Update the global rewarded players list
+     * @param CrateType $type
+     * @param DynamicCrateReward $reward
+     * @return void
+     */
+    public static function setRewardedPlayers(CrateType $type, DynamicCrateReward $reward): void
+    {
+        $rewardedPlayers = self::$instance->rewardedPlayers[$type->getId()] ?? [];
+        $rewardedPlayers[$reward->getId()] = $reward->getRewardedPlayers();
+        self::$instance->rewardedPlayers[$type->getId()] = $rewardedPlayers;
+        StoreDataTask::updateRewardedPlayers();
+    }
+
+    /**
+     * Save the rewarded players list
+     * @return void
+     */
+    public function saveRewardedPlayers(): void
+    {
+        file_put_contents($this->getDataFolder() . "rewarded_players.json", json_encode($this->rewardedPlayers));
+    }
+
+    /**
+     * Get a Command Block
+     * @return Block|null
+     */
+    public static function getCommandBlock(): ?Block
+    {
+        $block = self::$instance->commandBlock;
+        if ($block === null) return null;
+        return clone $block;
+    }
+
     public function onLoad(): void
     {
         // register the crate item entity
-        EntityFactory::getInstance()->register(CrateItem::class, function (World $world, CompoundTag $nbt): CrateItem {
-            return new CrateItem(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+        EntityFactory::getInstance()->register(CrateRewardItemEntity::class, function (World $world, CompoundTag $nbt): CrateRewardItemEntity {
+            return new CrateRewardItemEntity(EntityDataHelper::parseLocation($nbt, $world), $nbt);
         }, ['CrateItem']);
+
+        // register a command block
+        $this->commandBlock = new Block(new BlockIdentifier(BlockTypeIds::newId()), "Command Block", new BlockTypeInfo(new BlockBreakInfo(0)));
+        RuntimeBlockStateRegistry::getInstance()->register($this->commandBlock);
+
+        // only register the command block when it isn't already registered
+        $itemParser = StringToItemParser::getInstance();
+        if ($itemParser->parse("minecraft:command_block") === null) {
+            $itemParser->registerBlock("minecraft:command_block", fn(): Block => clone $this->commandBlock);
+        }
     }
 
     /**
@@ -109,6 +164,9 @@ class MagicCrates extends PluginBase
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
+
+        // store the data every 6000 ticks (~5 minutes)
+        $this->getScheduler()->scheduleRepeatingTask(new StoreDataTask($this), 6000);
     }
 
     private function loadCrateTypes(): void
@@ -125,47 +183,21 @@ class MagicCrates extends PluginBase
             return;
         }
 
-        $this->migrateCrateTypes($crateTypes);
+        $this->rewardedPlayers = [];
+        if (is_file($this->getDataFolder() . "rewarded_players.json")) {
+            $this->rewardedPlayers = json_decode(file_get_contents($this->getDataFolder() . "rewarded_players.json"), true) ?? [];
+        }
 
         $errorMsg = "";
         // decode all crate types
         foreach ($crateTypes as $id => $type) {
-            $crateType = CrateType::decode($id, $type, $errorMsg);
+            $crateType = CrateType::parse($id, $type, $this->rewardedPlayers[$id] ?? [], $errorMsg);
             if ($crateType === null) {
                 $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
-            } else $this->getLogger()->info("Loaded crate type: $id");
-        }
-    }
-
-    /**
-     * Move all crate types from the config.yml to the crate_types.json
-     * @param array $crateTypes
-     * @return void
-     */
-    private function migrateCrateTypes(array $crateTypes): void
-    {
-        if (!$this->getConfig()->exists("types")) return;
-
-        $this->getLogger()->notice("Found crates inside the config.yml, migrating them to crate_types.json");
-        $this->getLogger()->notice("Please only create crates inside the crate_types.json file, as support for crates in the config.yml will be removed.");
-        foreach ($this->getConfig()->get("types") as $id => $type) {
-            if (isset($crateTypes[$id])) {
-                $this->getLogger()->warning("Crate with id '$id' already exists in crate_types.json, the current crate in crate_types.json will be overwritten");
+            } else {
+                $this->getLogger()->info("Loaded crate type: $id");
             }
-
-            $crateTypes[$id] = $type;
         }
-
-        // remove the types from the config
-        $this->getConfig()->remove("types");
-        try {
-            $this->getConfig()->save();
-        } catch (JsonException) {
-            $this->getLogger()->error("Cannot update the config.yml");
-        }
-
-        // save the updated crate_types.json in pretty print
-        file_put_contents($this->getDataFolder() . "crate_types.json", json_encode($crateTypes, JSON_PRETTY_PRINT));
     }
 
     /**
@@ -202,11 +234,13 @@ class MagicCrates extends PluginBase
 
     public function onDisable(): void
     {
+        // save the crates and players
         $this->saveCrates();
+        $this->saveRewardedPlayers();
 
         foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
             foreach ($world->getEntities() as $entity) {
-                if ($entity instanceof CrateItem) $entity->flagForDespawn();
+                if ($entity instanceof CrateRewardItemEntity) $entity->flagForDespawn();
             }
         }
     }

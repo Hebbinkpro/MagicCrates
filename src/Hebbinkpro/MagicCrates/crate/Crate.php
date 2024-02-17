@@ -22,7 +22,8 @@ namespace Hebbinkpro\MagicCrates\crate;
 use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
-use Hebbinkpro\MagicCrates\utils\EntityUtils;
+use Hebbinkpro\MagicCrates\tasks\StoreDataTask;
+use pocketmine\block\tile\Chest;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
@@ -30,6 +31,8 @@ use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\particle\FloatingTextParticle;
 use pocketmine\world\Position;
+use pocketmine\world\sound\ChestCloseSound;
+use pocketmine\world\sound\ChestOpenSound;
 use pocketmine\world\World;
 
 class Crate
@@ -99,7 +102,7 @@ class Crate
         $crate = new Crate($pos, $worldName, $type);
 
         // there already exists a crate at this position
-        if (!self::cacheCrate($crate)) {
+        if (!self::addCrate($crate)) {
             $errorMsg = "There already exists a crate at this position";
             return null;
         }
@@ -112,7 +115,7 @@ class Crate
      * @param Crate $crate
      * @return bool
      */
-    public static function cacheCrate(Crate $crate): bool
+    public static function addCrate(Crate $crate): bool
     {
         if (!isset(self::$crates[$crate->getWorldName()])) self::$crates[$crate->getWorldName()] = [];
 
@@ -122,6 +125,8 @@ class Crate
 
         // add the crate to the list
         self::$crates[$crate->getWorldName()][$i] = $crate;
+        StoreDataTask::updateCrates();
+
         return true;
     }
 
@@ -145,6 +150,23 @@ class Crate
     }
 
     /**
+     * Get the position of the crate
+     * @return Position
+     */
+    public function getPos(): Position
+    {
+        return Position::fromObject($this->pos, $this->getWorld());
+    }
+
+    /**
+     * @return World|null
+     */
+    public function getWorld(): ?World
+    {
+        return Server::getInstance()->getWorldManager()->getWorldByName($this->world);
+    }
+
+    /**
      * Show all floating text particles in the world to the player
      * @param Player $player
      * @param World|null $world
@@ -157,14 +179,6 @@ class Crate
         foreach (self::getCratesInWorld($world) as $crate) {
             $crate->showFloatingText($player);
         }
-    }
-
-    /**
-     * @return World|null
-     */
-    public function getWorld(): ?World
-    {
-        return Server::getInstance()->getWorldManager()->getWorldByName($this->world);
     }
 
     /**
@@ -219,15 +233,6 @@ class Crate
     public static function getAllCrates(): array
     {
         return self::$crates;
-    }
-
-    /**
-     * Get the position of the crate
-     * @return Position
-     */
-    public function getPos(): Position
-    {
-        return Position::fromObject($this->pos, $this->getWorld());
     }
 
     /**
@@ -308,16 +313,7 @@ class Crate
      */
     public function open(Player $player): void
     {
-        $reward = $this->getType()->getRandomReward();
-
-        $spawnPos = $this->pos->add(0.5, 1, 0.5);
-
-        $nbt = EntityUtils::createBaseNBT($spawnPos);
-        $nbt->setString("owner", $player->getName());
-        $nbt->setFloat("spawn-y", $spawnPos->getY());
-        $nbt->setString("crate-pos", serialize($this->pos->asVector3()));
-        $nbt->setString("crate-type", $this->type->getId());
-        $nbt->setString("reward", $reward->getName());
+        $reward = $this->type->rewardPlayer($player);
 
         $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");
         $this->opener = $player;
@@ -325,7 +321,15 @@ class Crate
 
         (new CrateOpenEvent($this, $player))->call();
 
-        MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $nbt));
+        MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $player));
+
+        // open the chest for all viewers
+        $chest = $this->getWorld()?->getTile($this->pos);
+        if ($chest instanceof Chest) {
+            $chest->getInventory()->animateBlock(true);
+            $this->getWorld()->addSound($this->pos->add(0.5, 0.5, 0.5), new ChestOpenSound());
+        }
+
     }
 
     /**
@@ -340,12 +344,31 @@ class Crate
     }
 
     /**
+     * Close the crate
+     * @return void
+     */
+    public function close(): void
+    {
+        $this->opener = null;
+        $this->showFloatingText();
+
+
+        // close the chest for all viewers
+        $chest = $this->getWorld()?->getTile($this->pos);
+        if ($chest instanceof Chest) {
+            $chest->getInventory()->animateBlock(false);
+            $this->getWorld()->addSound($this->pos->add(0.5, 0.5, 0.5), new ChestCloseSound());
+        }
+    }
+
+    /**
      * Remove the crate
      * @return void
      */
     public function remove(): void
     {
         unset(self::$crates[$this->world][self::getPositionString($this->pos)]);
+        StoreDataTask::updateCrates();
     }
 
     /**

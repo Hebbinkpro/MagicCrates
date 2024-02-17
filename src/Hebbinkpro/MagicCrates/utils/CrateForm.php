@@ -21,8 +21,10 @@ namespace Hebbinkpro\MagicCrates\utils;
 
 
 use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\crate\CrateReward;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\MagicCrates;
+use pocketmine\item\Item;
 use pocketmine\player\Player;
 use pocketmine\world\Position;
 use Vecnavium\FormsUI\CustomForm;
@@ -33,9 +35,9 @@ class CrateForm
 {
     private MagicCrates $plugin;
     private Position $pos;
-
-
     private ?CrateType $type = null;
+    /** @var array<string, array<string, array{CrateReward, int}>> */
+    private array $playerRewards = [];
 
     public function __construct(MagicCrates $plugin, Position $pos)
     {
@@ -82,14 +84,13 @@ class CrateForm
 
             if ($data) {
                 $crate = new Crate($this->pos, $this->pos->getWorld(), $this->type);
-                if (!Crate::cacheCrate($crate)) {
+                if (!Crate::addCrate($crate)) {
                     $player->sendMessage(MagicCrates::getPrefix() . " §cThere already exists a crate at this position");
                     return;
                 }
 
                 $crate->showFloatingText();
                 $player->sendMessage(MagicCrates::getPrefix() . " §aThe {$crate->getType()->getName()}§r§a crate is created");
-                $this->plugin->saveCrates();
                 return;
             }
 
@@ -124,7 +125,6 @@ class CrateForm
             if ($data) {
                 $crate->remove();
                 $crate->hideFloatingText();
-                $this->plugin->saveCrates();
 
                 $player->sendMessage(MagicCrates::getPrefix() . " §aThe §e{$crate->getType()->getId()} §r§acrate is removed");
                 return;
@@ -160,43 +160,121 @@ class CrateForm
 
         $form = new SimpleForm(function (Player $player, $data) use ($crate, $type) {
             {
-                if (!is_string($data) || $data === "close") return;
+                if (is_string($data)) {
+                    if ($data === "open") {
+                        $crate->openWithKey($player);
+                    } else if (str_starts_with($data, "reward_")) {
+                        // remove "reward_" from the name
+                        $rewardId = substr($data, 7);
+                        $reward = $type->getRewardById($rewardId);
+                        if ($reward !== null) {
+                            // send the reward preview
+                            $this->sendCrateRewardPreviewForm($player, $crate, $reward);
+                            return;
+                        }
 
-                if ($data === "open") {
-                    $crate->openWithKey($player);
-                    return;
+                        // this message should never occur, but it's here just in case
+                        $player->sendMessage("§cThe clicked reward does not exist in the crate.");
+                    }
                 }
+
+                // the form is closed, remove this data from the cache
+                unset($this->playerRewards[$type->getId()][$player->getUniqueId()->toString()]);
             }
         });
 
         // set the form title
         $form->setTitle(MagicCrates::getPrefix() . " - {$crate->getType()->getName()}§r Preview");
+
+
         // add the open button if the player has a valid key in their inventory
         if ($type->getKeyFromPlayer($player) !== null) $form->addButton("§aOpen Crate", -1, "", "open");
-        // add a close button
-        $form->addButton("§cClose", -1, "", "close");
+
+
+        // get the rewards and total amount of rewards of the player
+        [$rewards, $totalAmount] = $this->getPlayerRewards($crate->getType(), $player);
 
         // add buttons for all rewards inside the crate
-        foreach ($type->getRewardDistribution(true) as $name => $p) {
-            $reward = $type->getRewardByName($name);
+        foreach ($rewards as $reward) {
+            $p = $reward->getAmount() / $totalAmount;
 
-            $item = $reward->getItem();
-            $count = $item?->getCount() ?? 1;
+            $buttonName = $reward->getAmount() . "x §l" . $reward->getName() . "§r\n";
+            $buttonName .= "Probability: " . round($p * 100, 1) . "%%";
 
-            $buttonName = "§l" . $reward->getName() . "§r";
-            if ($count > 1) $buttonName .= " x$count";
-
-            $buttonName .= "\nProbability: §6" . round($p, 1);
-
-            $image = $reward->getIcon() ?? $reward->getItemIcon();
+            $image = $reward->getIcon() ?? $reward->getDefaultIcon();
 
             $imageType = SimpleForm::IMAGE_TYPE_PATH;
             if (str_starts_with($image, "http")) $imageType = SimpleForm::IMAGE_TYPE_URL;
 
-            $form->addButton($buttonName, $imageType, $image);
+            $form->addButton($buttonName, $imageType, $image, "reward_" . $reward->getId());
         }
 
-        $player->sendForm($form);
+        $form->setContent("This crate is filled with $totalAmount items.");
 
+        $player->sendForm($form);
+    }
+
+    /**
+     * Sends a crate reward preview form with some extra details about the crate reward
+     * @param Player $player
+     * @param Crate $crate
+     * @param CrateReward $reward
+     * @return void
+     */
+    public function sendCrateRewardPreviewForm(Player $player, Crate $crate, CrateReward $reward): void
+    {
+        $form = new SimpleForm(function (Player $player, $data) use ($crate) {
+            {
+                if ($data === "back") {
+                    $this->sendPreviewForm($player);
+                    return;
+                }
+
+                // reset the form
+                unset($this->playerRewards[$crate->getType()->getId()][$player->getUniqueId()->toString()]);
+            }
+        });
+
+        [$rewards, $total] = $this->getPlayerRewards($crate->getType(), $player);
+        $amount = $reward->getAmount();
+
+        // set the form title
+        $form->setTitle(MagicCrates::getPrefix() . " - {$crate->getType()->getName()} §rReward Preview");
+
+        $items = array_map(fn(Item $i) => $i->getCount() . "x " . $i->getName(), $reward->getItems());
+
+        $form->setContent(
+            "Reward Name: " . $reward->getName() . "\n" .
+            "Amount: " . $amount . "\n" .
+            "Probability: " . (round(($amount / $total) * 100, 1)) . "%\n" .
+            (sizeof($items) == 0 ? "" : "Items: \n - " . implode("\n - ", $items)) . "\n" .
+            (sizeof($reward->getCommands()) == 0 ? "" : "Commands: " . sizeof($reward->getCommands()) . "\n")
+        );
+
+
+        $form->addButton("§c<- Back", -1, "", "back");
+
+        $player->sendForm($form);
+    }
+
+    /**
+     * Get player rewards from the cache or crate
+     * @param CrateType $type
+     * @param Player $player
+     * @return array
+     */
+    private function getPlayerRewards(CrateType $type, Player $player): array
+    {
+
+        if (isset($this->playerRewards[$type->getId()][$player->getUniqueId()->toString()])) {
+            return $this->playerRewards[$type->getId()][$player->getUniqueId()->toString()];
+        }
+        $totalAmount = $type->getTotalRewardAmount($player);
+        $rewards = $type->getPlayerRewards($player);
+
+        if (!isset($this->playerRewards[$type->getId()])) $this->playerRewards[$type->getId()] = [];
+        $this->playerRewards[$type->getId()][$player->getUniqueId()->toString()] = [$rewards, $totalAmount];
+
+        return [$rewards, $totalAmount];
     }
 }

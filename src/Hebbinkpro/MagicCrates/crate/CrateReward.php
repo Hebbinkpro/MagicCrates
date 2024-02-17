@@ -30,64 +30,151 @@ use pocketmine\item\StringToItemParser;
 
 class CrateReward
 {
-    private string $name;
-    private ?Item $item;
-    private int $amount;
+    protected string $id;
+    protected string $name;
+    protected int $amount;
+    /** @var Item[] */
+    protected array $items;
     /** @var string[] */
-    private array $commands;
-    private ?string $icon;
+    protected array $commands;
+    protected ?string $icon;
 
     /**
-     * @param string $name
-     * @param Item|null $item
-     * @param int $amount
-     * @param string[] $commands
-     * @param string|null $icon
+     * @param string $id the id of the reward
+     * @param string $name the name of the reward
+     * @param Item[] $items the items that has to be given to the player
+     * @param string[] $commands the commands to be executed after rewarding the reward
+     * @param string|null $icon the icon to be displayed
      */
-    public function __construct(string $name, ?Item $item, int $amount, array $commands, ?string $icon)
+    public function __construct(string $id, string $name, int $amount, array $items, array $commands, ?string $icon)
     {
+        $this->id = $id;
         $this->name = $name;
-        $this->item = $item;
+        $this->items = $items;
         $this->amount = $amount;
         $this->commands = $commands;
         $this->icon = $icon;
     }
 
     /**
-     * @param array{name: string, item?: array, commands?: string[], amount?: int} $reward
+     * @param mixed $id
+     * @param array{name: string, amount: int, item?: array, items?: array<array>, commands?: string[], icon?: string, player_max?: int, global_max?: int, replace?: boolean} $data
      * @param string $errorMsg message for when something went wrong while decoding
+     * @param bool $parseDynamic
      * @return CrateReward|null
      */
-    public static function decode(array $reward, string &$errorMsg = ""): ?CrateReward
+    public static function parse(mixed $id, array $data, string &$errorMsg = "", bool $parseDynamic = true): ?CrateReward
     {
-        if (!isset($reward["name"])) {
+        if (!isset($data["name"])) {
             $errorMsg = "No name given.";
             return null;
         }
 
-        $name = $reward["name"];
+        $name = $data["name"];
 
-        $item = null;
-        if (isset($reward["item"])) {
-            $item = self::decodeItem($reward["item"] ?? [], $errorMsg);
-            if ($item === null) {
-                $errorMsg = "Could not decode item: $errorMsg";
-                return null;
-            }
+        // create an id from the name if there is no ID given
+        // TODO: Force servers to use dynamic ID's (>= v4.0.0)
+        if (!is_string($id)) {
+            $id = str_replace(" ", "_", strtolower($name));
         }
 
-        $commands = $reward["commands"] ?? [];
-        $amount = intval($reward["amount"] ?? 1);
-
-        $icon = $reward["icon"] ?? null;
-
-        // we cannot have less than 1 of a reward
-        if ($amount < 1) {
-            $errorMsg = "Amount is less then 1.";
+        $amount = self::parseInteger($data["amount"] ?? 0, 0);
+        if ($amount === null) {
+            $errorMsg = "amount is not a valid integer.";
             return null;
         }
 
-        return new CrateReward($name, $item, $amount, $commands, $icon);
+        $encodedItems = $data["items"] ?? $data["item"] ?? [];
+
+        if (!is_array($encodedItems)) {
+            $errorMsg = "Could not decode 'item' or 'items': invalid value $encodedItems";
+            return null;
+        }
+
+        if (isset($encodedItems["id"])) {
+            $encodedItems = [$encodedItems];
+        }
+
+        // there is a list with items given
+        $items = self::parseItems($encodedItems, $errorMsg);
+        if ($items === null) {
+            $errorMsg = "Could not decode 'items': $errorMsg";
+            return null;
+        }
+
+        $commands = $data["commands"] ?? [];
+        $icon = $data["icon"] ?? null;
+
+        // construct the reward
+        $reward = new CrateReward($id, $name, $amount, $items, $commands, $icon);
+
+        // check if it is a dynamic reward
+        if ($parseDynamic) {
+            // check if we can construct a dynamic crate reward
+            $dynamic = DynamicCrateReward::parseDynamic($reward, $data, $errorMsg);
+            if ($dynamic !== null) return $dynamic;
+            else if (strlen($errorMsg) > 0) return null; // something went wrong while parsing the dynamic reward
+        }
+
+
+        // amount = 0 is only valid for a DynamicReward
+        if ($amount == 0) {
+            $errorMsg = "Amount should be at least 1!";
+            return null;
+        }
+
+        return $reward;
+    }
+
+    /**
+     * Parse the given value to an integer
+     * @param mixed $value the value to parse
+     * @param int|null $minValue minimum allowed value
+     * @param int|null $maxValue maximum allowed value
+     * @return int|null the bounded value or null when the given value was not a valid integer
+     */
+    public static function parseInteger(mixed $value, int $minValue = null, int $maxValue = null): ?int
+    {
+        // check if it is not already an integer
+        if (!is_int($value)) {
+            // we cannot make an integer of this value
+            if (!ctype_digit($value)) return null;
+            $value = intval($value);
+        }
+
+        // no min or max value given
+        if ($minValue === null && $maxValue === null) return $value;
+
+        // if the min or max value is null, set them to the min/max allowed integers
+        $minValue ??= PHP_INT_MIN;
+        $maxValue ??= PHP_INT_MAX;
+
+        // minmax the value
+        return min(max($value, $minValue), $maxValue);
+    }
+
+    /**
+     * @param array<array{id: string, name?: string, amount?: int, lore?: string|string[], enchantments?: array{name: string, level: int}[]}> $itemsData
+     * @param string $errorMsg
+     * @return ?array the list of all items, or null when something went wrong
+     */
+    public static function parseItems(array $itemsData, string &$errorMsg = ""): ?array
+    {
+        $items = [];
+        foreach ($itemsData as $i => $itemData) {
+            $item = self::parseItem($itemData, $errorMsg);
+
+            // we do not allow the user to continue with their actions before the user fixes their JSON
+            if ($item === null) {
+                $errorMsg = "Could not decode item $i: $errorMsg";
+                return null;
+            }
+
+            $items[] = $item;
+
+        }
+
+        return $items;
     }
 
     /**
@@ -95,7 +182,7 @@ class CrateReward
      * @param string $errorMsg
      * @return Item|null
      */
-    public static function decodeItem(array $itemData, string &$errorMsg = ""): ?Item
+    public static function parseItem(array $itemData, string &$errorMsg = ""): ?Item
     {
         if (!isset($itemData["id"])) {
             $errorMsg = "No item id given.";
@@ -104,7 +191,7 @@ class CrateReward
 
         $item = StringToItemParser::getInstance()->parse($itemData["id"]);
 
-        // its not a vanilla item
+        // it's not a vanilla item
         if ($item === null) {
             // check if Customies is enabled
             if (MagicCrates::isPluginEnabled("Customies")) {
@@ -150,27 +237,25 @@ class CrateReward
     /**
      * @return string
      */
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return string
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
     /**
-     * @return Item|null
+     * @return Item[]
      */
-    public function getItem(): ?Item
+    public function getItems(): array
     {
-        // clone the item, otherwise bad things can happen
-        return clone $this->item;
-    }
-
-    /**
-     * The amount of this reward inside the crate
-     * @return int
-     */
-    public function getAmount(): int
-    {
-        return $this->amount;
+        return $this->items;
     }
 
     /**
@@ -183,25 +268,26 @@ class CrateReward
 
     /**
      * Get the icon of the reward
-     * @return string|null
+     * @return string
      */
-    public function getIcon(): ?string
+    public function getIcon(): string
     {
-        return $this->icon;
+        return $this->icon ?? $this->getDefaultIcon();
     }
 
     /**
-     * Get the icon of the item
+     * Get the default icon of the reward based upon the first item or a command block when no items are given
      * @return string
      */
-    public function getItemIcon(): string
+    public function getDefaultIcon(): string
     {
-        // only commands will be executed, set the icon to a command block
-        if ($this->item === null && count($this->commands) > 0) return "textures/blocks/command_block";
+        // when there is no item defined, only commands will be executed, so ue command block texture
+        $item = $this->items[0] ?? null;
+        if ($item === null) return "textures/blocks/command_block";
 
-        $block = $this->item->getBlock();
+        $block = $item->getBlock();
         if ($block instanceof Air) {
-            $name = StringToItemParser::getInstance()->lookupAliases($this->item)[0];
+            $name = StringToItemParser::getInstance()->lookupAliases($item)[0];
             $icon = "textures/items/$name";
         } else {
             $name = StringToItemParser::getInstance()->lookupBlockAliases($block)[0];
@@ -210,4 +296,25 @@ class CrateReward
 
         return $icon;
     }
+
+    /**
+     * The (maximum) amount of this reward inside the crate
+     * @return int
+     */
+    public function getAmount(): int
+    {
+
+        return $this->amount;
+    }
+
+    /**
+     * Construct a crate reward instance with the given amount
+     * @param int $amount
+     * @return CrateReward
+     */
+    public function setAmount(int $amount): CrateReward
+    {
+        return new CrateReward($this->id, $this->name, $amount, $this->items, $this->commands, $this->icon);
+    }
+
 }

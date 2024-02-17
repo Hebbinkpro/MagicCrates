@@ -1,14 +1,36 @@
 {
   "common": {
-    "name": "§eCommon §6Crate",
-    "rewards": [
-      {
-        "name": "Diamond",
+    "name": "§cCommon §6Crate",
+    "rewards": {
+      "iron": {
+        "name": "Common Iron",
+        "amount": 5,
         "item": {
-          "id": "minecraft:diamond",
-          "name": "Common Diamond",
+          "id": "iron_ingot"
+        }
+      },
+      "dirt": {
+        "name": "Dirt",
+        "amount": 15,
+        "item": {
+          "id": "dirt",
+          "amount": 2
+        }
+      }
+    }
+  },
+  "rare": {
+    "name": "§bRare §6Crate",
+    "replacement": "dirt",
+    "rewards": {
+      "diamond": {
+        "name": "Unique Diamond",
+        "global_max": 1,
+        "item": {
+          "id": "diamond",
+          "name": "Unique Diamond",
           "amount": 1,
-          "lore": "Diamond from a crate",
+          "lore": "The only Unique Diamond available in the server",
           "enchantments": [
             {
               "name": "efficiency",
@@ -17,20 +39,52 @@
           ]
         },
         "commands": [
-          "msg {player} be carefully with this diamond!"
-        ],
-        "amount": 1
+          "msg {player} you are the only player in the server with this diamond."
+        ]
       },
-      {
-        "name": "dirt",
+      "dirt": {
+        "name": "Dirt",
+        "amount": 9,
         "item": {
-          "id": "minecraft:dirt",
+          "id": "dirt",
           "amount": 2
         }
       }
-    ],
+    },
     "commands": [
-      "say {player} won {reward} from a {crate_type} crate"
+      "say {player} won {reward} from a {crate} crate"
+    ]
+  },
+  "magic": {
+    "name": "§cMagic §6Crate",
+    "replacement": "dirt",
+    "rewards": {
+      "shard": {
+        "name": "Magic Shard",
+        "player_max": 1,
+        "amount": 5,
+        "replace_amount": 10,
+        "item": {
+          "id": "amethyst_shard",
+          "name": "Magic Amethyst",
+          "amount": 1,
+          "lore": "A Shard full of Magic"
+        },
+        "commands": [
+          "msg {player} you have received your only magic shared."
+        ]
+      },
+      "dirt": {
+        "name": "Dirt",
+        "amount": 40,
+        "item": {
+          "id": "dirt",
+          "amount": 2
+        }
+      }
+    },
+    "commands": [
+      "say {player} won {reward} from a {crate} crate"
     ]
   }
 }
