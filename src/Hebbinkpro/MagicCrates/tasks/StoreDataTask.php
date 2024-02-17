@@ -29,9 +29,11 @@ class StoreDataTask extends Task
 {
     private static bool $cratesUpdated = false;
     private static bool $rewardedPlayersUpdated = false;
+    private MagicCrates $plugin;
 
-    public function __construct(private readonly MagicCrates $plugin)
+    public function __construct(MagicCrates $plugin)
     {
+        $this->plugin = $plugin;
     }
 
     /**
