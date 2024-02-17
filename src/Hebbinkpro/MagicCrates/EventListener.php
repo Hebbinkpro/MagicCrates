@@ -100,7 +100,7 @@ class EventListener implements Listener
 
         PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
-        $form = new CrateForm($this->plugin, $pos);
+        $form = new CrateForm($pos);
         $form->sendCreateForm($player);
     }
 
@@ -114,7 +114,7 @@ class EventListener implements Listener
 
         PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
 
-        $form = new CrateForm($this->plugin, $crate->getPos());
+        $form = new CrateForm($crate->getPos());
         $form->sendRemoveForm($player);
     }
 
@@ -129,7 +129,7 @@ class EventListener implements Listener
         $type = $crate->getType();
 
         if (!$type->isValidKey($item)) {
-            $form = new CrateForm($this->plugin, $crate->getPos());
+            $form = new CrateForm($crate->getPos());
             $form->sendPreviewForm($player);
             return;
         }
@@ -152,7 +152,7 @@ class EventListener implements Listener
         $crate = Crate::getByPosition($block->getPosition());
 
         if ($player->hasPermission("magiccrates.break.remove") && $crate !== null) {
-            $form = new CrateForm($this->plugin, $crate->getPos());
+            $form = new CrateForm($crate->getPos());
             $form->sendRemoveForm($player);
             $e->cancel();
         }

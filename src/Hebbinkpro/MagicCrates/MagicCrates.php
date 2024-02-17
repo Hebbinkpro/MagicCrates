@@ -105,15 +105,6 @@ class MagicCrates extends PluginBase
     }
 
     /**
-     * Save the rewarded players list
-     * @return void
-     */
-    public function saveRewardedPlayers(): void
-    {
-        file_put_contents($this->getDataFolder() . "rewarded_players.json", json_encode($this->rewardedPlayers));
-    }
-
-    /**
      * Get a Command Block
      * @return Block|null
      */
@@ -262,5 +253,14 @@ class MagicCrates extends PluginBase
 
         // store the crates
         file_put_contents($this->getDataFolder() . "crates.json", json_encode($crateData));
+    }
+
+    /**
+     * Save the rewarded players list
+     * @return void
+     */
+    public function saveRewardedPlayers(): void
+    {
+        file_put_contents($this->getDataFolder() . "rewarded_players.json", json_encode($this->rewardedPlayers));
     }
 }

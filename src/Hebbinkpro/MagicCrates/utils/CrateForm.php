@@ -33,15 +33,13 @@ use Vecnavium\FormsUI\SimpleForm;
 
 class CrateForm
 {
-    private MagicCrates $plugin;
     private Position $pos;
     private ?CrateType $type = null;
     /** @var array<string, array<string, array{CrateReward, int}>> */
     private array $playerRewards = [];
 
-    public function __construct(MagicCrates $plugin, Position $pos)
+    public function __construct(Position $pos)
     {
-        $this->plugin = $plugin;
         $this->pos = $pos;
     }
 
