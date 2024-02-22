@@ -25,10 +25,9 @@ use CortexPE\Commando\PacketHooker;
 use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
-use Hebbinkpro\MagicCrates\crate\DynamicCrateReward;
+use Hebbinkpro\MagicCrates\db\DBController;
 use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
-use Hebbinkpro\MagicCrates\tasks\StoreDataTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
@@ -42,10 +41,7 @@ class MagicCrates extends PluginBase
     private static string $prefix = "§r[§6Magic§cCrates§r]";
     private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
-
-    private array $notLoadedCrates = [];
-    /** @var array<string, array<string, array<string, int>>> */
-    private array $rewardedPlayers = [];
+    private DBController $database;
 
     public static function getPrefix(): string
     {
@@ -83,17 +79,12 @@ class MagicCrates extends PluginBase
     }
 
     /**
-     * Update the global rewarded players list
-     * @param CrateType $type
-     * @param DynamicCrateReward $reward
-     * @return void
+     * Get the database controller
+     * @return DBController
      */
-    public static function setRewardedPlayers(CrateType $type, DynamicCrateReward $reward): void
+    public static function getDatabase(): DBController
     {
-        $rewardedPlayers = self::$instance->rewardedPlayers[$type->getId()] ?? [];
-        $rewardedPlayers[$reward->getId()] = $reward->getRewardedPlayers();
-        self::$instance->rewardedPlayers[$type->getId()] = $rewardedPlayers;
-        StoreDataTask::updateRewardedPlayers();
+        return self::$instance->database;
     }
 
     public function onLoad(): void
@@ -115,12 +106,19 @@ class MagicCrates extends PluginBase
         CrateCommandSender::register($this);
 
         // store the config
-        $this->saveResource("config.yml");
+        $this->saveDefaultConfig();
         self::$prefix = $this->getConfig()->get("prefix", self::$prefix);
         self::$keyName = $this->getConfig()->get("key-prefix", self::$keyName);
 
+        $this->database = new DBController($this);
+
+        $p = $this->database->getAllCrates();
+        $p->onCompletion(fn(array $crates) => var_dump($crates), fn() => var_dump("Oh No"));
+
+
         // load the types and created crates
         $this->loadCrateTypes();
+
         $this->loadCrates();
 
         $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
@@ -128,7 +126,7 @@ class MagicCrates extends PluginBase
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
 
         // store the data every 6000 ticks (~5 minutes)
-        $this->getScheduler()->scheduleRepeatingTask(new StoreDataTask($this), 6000);
+//        $this->getScheduler()->scheduleRepeatingTask(new StoreDataTask($this), 6000);
     }
 
     private function loadCrateTypes(): void
@@ -145,20 +143,18 @@ class MagicCrates extends PluginBase
             return;
         }
 
-        $this->rewardedPlayers = [];
-        if (is_file($this->getDataFolder() . "rewarded_players.json")) {
-            $this->rewardedPlayers = json_decode(file_get_contents($this->getDataFolder() . "rewarded_players.json"), true) ?? [];
-        }
-
-        $errorMsg = "";
         // decode all crate types
-        foreach ($crateTypes as $id => $type) {
-            $crateType = CrateType::parse($id, $type, $this->rewardedPlayers[$id] ?? [], $errorMsg);
+        foreach ($crateTypes as $id => $typeData) {
+
+            $errorMsg = "";
+            $crateType = CrateType::parse($id, $typeData, $errorMsg);
             if ($crateType === null) {
                 $this->getLogger()->error("Could not load crate type: $id. $errorMsg");
             } else {
                 $this->getLogger()->info("Loaded crate type: $id");
             }
+
+
         }
     }
 
@@ -168,70 +164,29 @@ class MagicCrates extends PluginBase
      */
     private function loadCrates(): void
     {
-
-        $crates = [];
-        if (file_exists($this->getDataFolder() . "crates.json")) {
-            // get the stored crates
-            $fileData = file_get_contents($this->getDataFolder() . "crates.json");
-            $crates = json_decode($fileData, true) ?? [];
-        }
-
-        // decode all crates
-        $errorMsg = "";
-        foreach ($crates as $cd) {
-            $crate = Crate::decode($cd ?? [], $errorMsg);
-            if ($crate === null) {
-                // store the crate so that it will not be lost when all crates are saved
-                $this->notLoadedCrates[] = $cd;
-                $this->getLogger()->warning("Could not load crate of type '{$cd["type"]}' in world '{$cd["world"]}' at '{$cd["x"]},{$cd["y"]},{$cd["z"]}'.");
-                $this->getLogger()->warning($errorMsg);
+        $promise = $this->database->getAllCrates();
+        $promise->onCompletion(function (array $crates) {
+            // register all crates
+            foreach ($crates as $crate) {
+                Crate::registerCrate($crate);
             }
-        }
 
-        $total = sizeof($crates);
-        $loaded = $total - sizeof($this->notLoadedCrates);
-        if ($total == $loaded) $this->getLogger()->info("Loaded all crates");
-        else $this->getLogger()->info("Loaded $loaded out of $total crates");
+            $this->getLogger()->info("All crates are loaded");
+        }, fn() => $this->getLogger()->error("Could not get the crates from the database"));
+
+
     }
 
     public function onDisable(): void
     {
-        // save the crates and players
-        $this->saveCrates();
-        $this->saveRewardedPlayers();
-
+        // let all crate reward entities despawn
         foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
             foreach ($world->getEntities() as $entity) {
                 if ($entity instanceof CrateRewardItemEntity) $entity->flagForDespawn();
             }
         }
-    }
 
-    /**
-     * Save all crates to the json file
-     * @return void
-     */
-    public function saveCrates(): void
-    {
-        $crates = Crate::getAllCrates();
-
-        $crateData = $this->notLoadedCrates;
-        foreach ($crates as $worldCrates) {
-            foreach ($worldCrates as $crate) {
-                $crateData[] = $crate->encode();
-            }
-        }
-
-        // store the crates
-        file_put_contents($this->getDataFolder() . "crates.json", json_encode($crateData));
-    }
-
-    /**
-     * Save the rewarded players list
-     * @return void
-     */
-    public function saveRewardedPlayers(): void
-    {
-        file_put_contents($this->getDataFolder() . "rewarded_players.json", json_encode($this->rewardedPlayers));
+        // close the database
+        $this->database->unload();
     }
 }

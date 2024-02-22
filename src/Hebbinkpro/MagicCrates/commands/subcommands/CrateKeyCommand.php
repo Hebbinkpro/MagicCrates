@@ -50,16 +50,13 @@ class CrateKeyCommand extends BaseSubCommand
         }
 
         // get the amount of keys
-        if (!isset($args["amount"])) $amount = 1;
-        else {
-            $amount = $args["amount"];
+        $amount = $args["amount"] ?? 1;
 
             // negative or zero amount is given
             if ($amount <= 0) {
                 $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be >= 1");
                 return;
             }
-        }
 
         // get the type name, used in the messages
         $typeName = $type->getName();

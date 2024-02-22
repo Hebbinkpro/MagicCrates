@@ -66,11 +66,10 @@ class CrateType
     /**
      * @param string $id
      * @param array{name: string, rewards: array, commands: string[], replacement?: array} $data
-     * @param array<string, array<string, int>> $playerRewards
      * @param string $errorMsg
      * @return CrateType|null
      */
-    public static function parse(string $id, array $data, array $playerRewards, string &$errorMsg = ""): ?CrateType
+    public static function parse(string $id, array $data, string &$errorMsg = ""): ?CrateType
     {
         $typeName = $data["name"] ?? "§6$id §cCrate§r";
 
@@ -89,10 +88,6 @@ class CrateType
             $rewards[$reward->getId()] = $reward;
 
             if ($reward instanceof DynamicCrateReward) {
-                // set the players that are already rewarded
-                $rewardedPlayers = $playerRewards[$reward->getId()] ?? [];
-                $reward->setRewardedPlayers($rewardedPlayers);
-
                 if (isset($rewardData["replacement"])) {
                     if (is_string($rewardData["replacement"])) $rewardReplacements[$reward->getId()] = $rewardData["replacement"];
                     else {
@@ -293,38 +288,92 @@ class CrateType
     }
 
     /**
-     * Get the total amount of rewards the player can get
-     * @param Player $player
-     * @return int
+     * Reward a player with the given reward
+     * @param Player $player the player that will receive the reward
+     * @param CrateReward $reward the reward given to the player
+     * @param int $playerRewarded amount of times the reward is rewarded to the player
+     * @return void
      */
-    public function getTotalRewardAmount(Player $player): int
+    public function rewardPlayer(Player $player, CrateReward $reward, int $playerRewarded): void
     {
-        $total = 0;
-        foreach ($this->getPlayerRewards($player) as $reward) {
-            $total += $reward->getAmount();
+        // get the reward with the same id from the type
+        $realReward = $this->rewards[$reward->getId()] ?? null;
+        // if it is a dynamic reward
+        if ($realReward instanceof DynamicCrateReward) {
+            // set the player reward in the db
+            MagicCrates::getDatabase()->setPlayerRewards($this, $player, $realReward, $playerRewarded + 1);
         }
-        return $total;
+    }
+
+    /**
+     * Get a random reward from the rewards list based upon the given player
+     * @param Player $player
+     * @param callable(CrateReward $reward, int $playerRewarded): void $callback
+     * @return void
+     */
+    public function getRandomReward(Player $player, callable $callback): void
+    {
+        // get all the player rewards
+        $this->getPlayerRewards($player, function (array $rewards, array $playerRewarded) use ($callback) {
+            $dist = [];
+            foreach ($rewards as $i => $reward) {
+                // add amount times the index of the reward to the distribution
+                $dist = array_merge($dist, array_fill(0, $reward->getAmount(), $i));
+            }
+
+            // get a random reward index from the distribution
+            $rewardId = $dist[array_rand($dist)];
+
+            $reward = $rewards[$rewardId];
+            $rewarded = $playerRewarded[$rewardId] ?? 0;
+
+
+            // run the callback with the random reward
+            call_user_func($callback, $reward, $rewarded);
+        });
+
+
     }
 
     /**
      * Get all rewards the player can get
      * @param Player $player
-     * @return array<string, CrateReward>
+     * @param callable(array<string, CrateReward> $rewards, array<string, int> $playerRewarded, int $rewardTotal): void $callback
+     * @return void
      */
-    public function getPlayerRewards(Player $player): array
+    public function getPlayerRewards(Player $player, callable $callback): void
+    {
+        MagicCrates::getDatabase()->getRewardTotal($this)
+            ->onCompletion(function (array $totalRewards) use ($player, $callback) {
+                MagicCrates::getDatabase()->getPlayerRewards($this, $player)
+                    ->onCompletion(function (array $playerRewarded) use ($player, $callback, $totalRewards) {
+                        [$rewards, $totalAmount] = $this->determinePlayerRewards($totalRewards, $playerRewarded);
+
+                        call_user_func($callback, $rewards, $playerRewarded, $totalAmount);
+                    }, function () {
+                        var_dump("Could not complete the promise");
+                    });
+
+            }, fn() => null);
+    }
+
+    protected function determinePlayerRewards(array $rewardTotals, array $playerRewarded): array
     {
         /** @var array<string, CrateReward> $rewards */
         $rewards = [];
+        $totalAmount = 0;
 
         foreach ($this->rewards as $reward) {
-
             $replacement = null;
-
             // dynamic reward
             if ($reward instanceof DynamicCrateReward) {
-                // get the player and replacement amounts
-                $playerAmount = $reward->getPlayerAmount($player);
-                $replacementAmount = $reward->getPlayerReplaceAmount($player);
+                // get the player and reward totals
+                $playerTotal = $playerRewarded[$reward->getId()] ?? 0;
+                $rewardTotal = $rewardTotals[$reward->getId()] ?? 0;
+
+                // get the amounts for the reward and replacement reward
+                $rewardAmount = $reward->getPlayerAmount($rewardTotal, $playerTotal);
+                $replacementAmount = $reward->getPlayerReplaceAmount($rewardTotal, $playerTotal);
 
                 // set the replacement reward
                 if ($replacementAmount > 0) {
@@ -333,71 +382,48 @@ class CrateType
 
 
                 // update the player reward
-                if ($playerAmount > 0) $reward = $reward->setAmount($playerAmount);
+                if ($rewardAmount > 0) $reward = $reward->setAmount($rewardAmount);
                 else $reward = null;
             }
 
-            // check the reward and the replacement
             foreach ([$reward, $replacement] as $r) {
+                /** @var CrateReward|null $r */
                 if ($r === null) continue;
 
+                // increment the total amount
+                $totalAmount += $r->getAmount();
+
                 // there already is a reward with the same name
-                if (isset($rewards[$r->getName()])) {
-                    $oldReward = $rewards[$r->getName()];
+                if (isset($rewards[$r->getId()])) {
+                    $oldReward = $rewards[$r->getId()];
                     $newAmount = $oldReward->getAmount() + $r->getAmount();
-                    $rewards[$r->getName()] = $oldReward->setAmount($newAmount);
+                    $rewards[$r->getId()] = $oldReward->setAmount($newAmount);
                     continue;
                 }
                 // append the new reward to the array
-                $rewards[$r->getName()] = $r;
+                $rewards[$r->getId()] = $r;
             }
         }
 
-        return $rewards;
+        return [$rewards, $totalAmount];
     }
 
     /**
-     * Reward a player
-     * @param Player $player the player that will receive the reward
-     * @return CrateReward the reward rewarded to the player
-     */
-    public function rewardPlayer(Player $player): CrateReward
-    {
-        $reward = $this->getRandomReward($player);
-
-        // get the reward with the same name from the type
-        $realReward = $this->rewards[$reward->getId()] ?? null;
-        // if it is a dynamic reward, add the
-        if ($realReward instanceof DynamicCrateReward) {
-            // add a player use to the reward
-            $realReward->rewardPlayer($player);
-            // update the rewarded players in the global cache
-            MagicCrates::setRewardedPlayers($this, $realReward);
-        }
-
-        return $reward;
-    }
-
-    /**
-     * Get a random reward from the rewards list based upon the given player
+     * Reset all rewards of the given player
      * @param Player $player
-     * @return CrateReward
+     * @return void
      */
-    public function getRandomReward(Player $player): CrateReward
+    public function resetPlayerRewards(Player $player): void
     {
-        // construct a list of all available rewards
-        $rewards = $this->getPlayerRewards($player);
+        MagicCrates::getDatabase()->resetPlayerRewards($this, $player);
+    }
 
-        $dist = [];
-        foreach ($rewards as $i => $reward) {
-            // add amount times the index of the reward to the distribution
-            $dist = array_merge($dist, array_fill(0, $reward->getAmount(), $i));
-        }
-
-        // get a random reward index from the distribution
-        $i = $dist[array_rand($dist)];
-
-        // return the chosen reward
-        return $rewards[$i];
+    /**
+     * Reset all rewards from this type
+     * @return void
+     */
+    public function resetRewards(): void
+    {
+        MagicCrates::getDatabase()->resetRewards($this);
     }
 }

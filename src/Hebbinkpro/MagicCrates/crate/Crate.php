@@ -22,7 +22,6 @@ namespace Hebbinkpro\MagicCrates\crate;
 use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
-use Hebbinkpro\MagicCrates\tasks\StoreDataTask;
 use pocketmine\block\tile\Chest;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
@@ -48,7 +47,7 @@ class Crate
     private FloatingTextParticle $floatingText;
     private ?Player $opener;
 
-    public function __construct(Vector3 $pos, string|World $world, CrateType $type)
+    public function __construct(Vector3 $pos, World|string $world, CrateType $type)
     {
         if (!is_string($world)) $world = $world->getFolderName();
 
@@ -62,50 +61,28 @@ class Crate
     /**
      * Decode an array to a Crate object
      * @param array{x: int, y: int, z: int, world: string, type: string} $crate
-     * @param string $errorMsg the message when null is returned
      * @return Crate|null
      */
-    public static function decode(array $crate, string &$errorMsg): ?Crate
+    public static function decode(array $crate): ?Crate
     {
-        if (!isset($crate["x"]) || !isset($crate["y"]) || !isset($crate["z"]) || !isset($crate["world"]) || !isset($crate["type"])) {
-            $errorMsg = "Not all data fields are present, expected: x,y,z,world,type";
-            return null;
-        }
-
-        // x,y,z coordinates are not numeric, or the world name isn't a string
-        if (!is_numeric($crate["x"]) || !is_numeric($crate["y"]) || !is_numeric($crate["z"]) || !is_string($crate["world"]) || !is_string($crate["type"])) {
-            $errorMsg = "Invalid data type detected in a data field";
-            return null;
-        }
-
         // check if the world with the given world name exists
         $worldName = $crate["world"];
         if (!is_dir(Server::getInstance()->getDataPath() . "worlds/$worldName")) {
-            $errorMsg = "World '$worldName' does not exist";
             return null;
         }
 
         // get the vector 3 position of the crate
-        $x = intval($crate["x"]);
-        $y = intval($crate["y"]);
-        $z = intval($crate["z"]);
-        $pos = new Vector3($x, $y, $z);
+        $pos = new Vector3($crate["x"], $crate["y"], $crate["z"]);
 
         // get the crate type
         $type = CrateType::getById($crate["type"]);
-        if ($type === null) {
-            $errorMsg = "Crate type '{$crate["type"]}' does not exist";
-            return null;
-        }
+        if ($type === null) return null;
 
         // create and cache the crate
         $crate = new Crate($pos, $worldName, $type);
 
         // there already exists a crate at this position
-        if (!self::addCrate($crate)) {
-            $errorMsg = "There already exists a crate at this position";
-            return null;
-        }
+        if (!self::registerCrate($crate)) return null;
 
         return $crate;
     }
@@ -115,7 +92,7 @@ class Crate
      * @param Crate $crate
      * @return bool
      */
-    public static function addCrate(Crate $crate): bool
+    public static function registerCrate(Crate $crate): bool
     {
         if (!isset(self::$crates[$crate->getWorldName()])) self::$crates[$crate->getWorldName()] = [];
 
@@ -125,7 +102,6 @@ class Crate
 
         // add the crate to the list
         self::$crates[$crate->getWorldName()][$i] = $crate;
-        StoreDataTask::updateCrates();
 
         return true;
     }
@@ -227,15 +203,6 @@ class Crate
     }
 
     /**
-     * Get the list containing all the crates
-     * @return Crate[][]
-     */
-    public static function getAllCrates(): array
-    {
-        return self::$crates;
-    }
-
-    /**
      * Get the player that is currently opening the crate
      * @return Player|null
      */
@@ -303,23 +270,27 @@ class Crate
      */
     public function open(Player $player): void
     {
-        $reward = $this->type->rewardPlayer($player);
+        // get the random reward and execute the opening after the reward is fetched
+        $this->type->getRandomReward($player, function (CrateReward $reward, int $playerRewarded) use ($player) {
+            // reward the player
+            $this->type->rewardPlayer($player, $reward, $playerRewarded);
 
-        $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");
-        $this->opener = $player;
-        $this->hideFloatingText();
+            // send the reward message
+            $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");
+            $this->opener = $player;
+            $this->hideFloatingText();
 
-        (new CrateOpenEvent($this, $player))->call();
+            (new CrateOpenEvent($this, $player))->call();
 
-        MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $player));
+            MagicCrates::scheduleAnimationTask(new StartCrateAnimationTask($this, $reward, $player));
 
-        // open the chest for all viewers
-        $chest = $this->getWorld()?->getTile($this->pos);
-        if ($chest instanceof Chest) {
-            $chest->getInventory()->animateBlock(true);
-            $this->getWorld()->addSound($this->pos->add(0.5, 0.5, 0.5), new ChestOpenSound());
-        }
-
+            // open the chest for all viewers
+            $chest = $this->getWorld()?->getTile($this->pos);
+            if ($chest instanceof Chest) {
+                $chest->getInventory()->animateBlock(true);
+                $this->getWorld()->addSound($this->pos->add(0.5, 0.5, 0.5), new ChestOpenSound());
+            }
+        });
     }
 
     /**
@@ -358,7 +329,7 @@ class Crate
     public function remove(): void
     {
         unset(self::$crates[$this->world][self::getPositionString($this->pos)]);
-        StoreDataTask::updateCrates();
+        MagicCrates::getDatabase()->removeCrate($this);
     }
 
     /**

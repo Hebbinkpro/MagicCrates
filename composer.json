@@ -12,7 +12,8 @@
     "php": "^8.1",
     "pocketmine/pocketmine-mp": "^5.0.0",
     "muqsit/simple-packet-handler": "dev-pm5",
-    "vecnavium/formsui": "dev-master"
+    "vecnavium/formsui": "dev-master",
+    "sof3/libasynql": "4.2.2"
   },
   "require-dev": {
     "paroxity/commando": "^3.1.0"

@@ -20,7 +20,6 @@
 namespace Hebbinkpro\MagicCrates\crate;
 
 use pocketmine\item\Item;
-use pocketmine\player\Player;
 
 class DynamicCrateReward extends CrateReward
 {
@@ -29,9 +28,6 @@ class DynamicCrateReward extends CrateReward
     private int $maxGlobalAmount;
     private bool $canReplace;
     private int $replaceAmount;
-
-    /** @var array<string, int> */
-    private array $rewardedPlayers;
 
     /**
      * @param string $name the name of the reward
@@ -42,7 +38,7 @@ class DynamicCrateReward extends CrateReward
      * @param int $maxPlayerAmount the amount of times this reward can be rewarded to the same player
      * @param int $maxGlobalAmount the amount of times this reward can be rewarded to every player in the server
      */
-    public function __construct(string $id, string $name, int $amount, array $items, array $commands, ?string $icon, int $maxPlayerAmount, int $maxGlobalAmount, bool $canReplace, int $replaceAmount, array $playersRewarded)
+    public function __construct(string $id, string $name, int $amount, array $items, array $commands, ?string $icon, int $maxPlayerAmount, int $maxGlobalAmount, bool $canReplace, int $replaceAmount)
     {
         parent::__construct($id, $name, $amount, $items, $commands, $icon);
 
@@ -50,7 +46,6 @@ class DynamicCrateReward extends CrateReward
         $this->maxGlobalAmount = $maxGlobalAmount;
         $this->canReplace = $canReplace;
         $this->replaceAmount = $replaceAmount;
-        $this->rewardedPlayers = $playersRewarded;
     }
 
     /**
@@ -91,7 +86,7 @@ class DynamicCrateReward extends CrateReward
             return null;
         }
 
-        return self::fromCrateReward($reward, $maxPlayerAmount, $maxGlobalAmount, $canReplace, $replaceAmount, []);
+        return self::fromCrateReward($reward, $maxPlayerAmount, $maxGlobalAmount, $canReplace, $replaceAmount);
     }
 
     /**
@@ -101,66 +96,41 @@ class DynamicCrateReward extends CrateReward
      * @param int $maxGlobalAmount
      * @param bool $canReplace
      * @param int $replacementAmount
-     * @param array $playersRewarded
      * @return DynamicCrateReward
      */
-    public static function fromCrateReward(CrateReward $reward, int $maxPlayerAmount, int $maxGlobalAmount, bool $canReplace, int $replacementAmount, array $playersRewarded): DynamicCrateReward
+    public static function fromCrateReward(CrateReward $reward, int $maxPlayerAmount, int $maxGlobalAmount, bool $canReplace, int $replacementAmount): DynamicCrateReward
     {
-        return new DynamicCrateReward($reward->getId(), $reward->getName(), $reward->getAmount(), $reward->getItems(), $reward->getCommands(), $reward->getIcon(), $maxPlayerAmount, $maxGlobalAmount, $canReplace, $replacementAmount, $playersRewarded);
+        return new DynamicCrateReward($reward->getId(), $reward->getName(), $reward->getAmount(), $reward->getItems(), $reward->getCommands(), $reward->getIcon(), $maxPlayerAmount, $maxGlobalAmount, $canReplace, $replacementAmount);
     }
 
     /**
      * The amount of this reward the player is able to get
-     * @param Player $player
+     * @param int $totalAmount
+     * @param int $playerAmount
      * @return int the amount of times the player is able to get this reward
      */
-    public function getPlayerAmount(Player $player): int
+    public function getPlayerAmount(int $totalAmount, int $playerAmount): int
     {
         // reward is not available for the player
-        if (!$this->canHaveReward($player)) return 0;
+        if (!$this->canHaveReward($totalAmount, $playerAmount)) return 0;
         // the default amount is set
         if ($this->amount > 0) return $this->amount;
 
-        // get the amount of times the player got this reward
-        $rewarded = $this->getPlayerRewardedAmount($player);
-
         // calculate the amount of times the player can get the reward
-        return max(0, $this->getPlayerMaxAmount() - $rewarded);
+        return max(0, $this->getPlayerMaxAmount() - $playerAmount);
     }
 
     /**
      * Check if this reward can be given to the player
-     * @param Player $player
+     * @param int $totalAmount
+     * @param int $playerAmount
      * @return bool if the player can receive this reward
      */
-    public function canHaveReward(Player $player): bool
+    public function canHaveReward(int $totalAmount, int $playerAmount): bool
     {
-        if ($this->maxGlobalAmount > 0 && $this->getTotalUses() >= $this->maxGlobalAmount) return false;
-        if ($this->maxPlayerAmount > 0 && $this->getPlayerRewardedAmount($player) >= $this->maxPlayerAmount) return false;
+        if ($this->maxGlobalAmount > 0 && $totalAmount >= $this->maxGlobalAmount) return false;
+        if ($this->maxPlayerAmount > 0 && $playerAmount >= $this->maxPlayerAmount) return false;
         return true;
-    }
-
-    /**
-     * Get the total amount of uses of all players combined
-     * @return int
-     */
-    public function getTotalUses(): int
-    {
-        $total = 0;
-        foreach ($this->rewardedPlayers as $use) {
-            $total += $use;
-        }
-        return $total;
-    }
-
-    /**
-     * Get the amount of uses of the given player
-     * @param Player $player
-     * @return int
-     */
-    public function getPlayerRewardedAmount(Player $player): int
-    {
-        return $this->rewardedPlayers[$player->getUniqueId()->toString()] ?? 0;
     }
 
     /**
@@ -182,15 +152,16 @@ class DynamicCrateReward extends CrateReward
 
     /**
      * The amount of the replacement reward the player is able to get
-     * @param Player $player
+     * @param int $totalUses
+     * @param int $playerAmount
      * @return int the amount of times the player is able to get this reward
      */
-    public function getPlayerReplaceAmount(Player $player): int
+    public function getPlayerReplaceAmount(int $totalUses, int $playerAmount): int
     {
         if (!$this->canReplace) return 0;
 
         // player cannot have the reward, so maximum replacement
-        if (!$this->canHaveReward($player)) {
+        if (!$this->canHaveReward($totalUses, $playerAmount)) {
             if ($this->replaceAmount > 0) return $this->replaceAmount;
             if ($this->amount > 0) return $this->amount;
             return $this->getPlayerMaxAmount();
@@ -199,29 +170,14 @@ class DynamicCrateReward extends CrateReward
         // default amount is set, so ignore any differences
         if ($this->amount > 0) return 0;
 
-        $rewarded = $this->getPlayerRewardedAmount($player);
-
         // replace amount is set, calculate the correct replacement amount
         if ($this->replaceAmount > 0) {
             $max = $this->getPlayerMaxAmount();
-            return intdiv($rewarded, max(1, $max)) * $this->replaceAmount;
+            return intdiv($playerAmount, max(1, $max)) * $this->replaceAmount;
         }
 
         // use the player rewarded amount
-        return $rewarded;
-    }
-
-    /**
-     * Reward this reward to the player
-     * @param Player $player the player to reward
-     * @param int $amount the amount of times to reward this to the player
-     * @return void
-     */
-    public function rewardPlayer(Player $player, int $amount = 1): void
-    {
-        // use getPlayerUses to get the current uses or 0 when the player is not in the list
-        $newUses = $this->getPlayerRewardedAmount($player) + $amount;
-        $this->rewardedPlayers[$player->getUniqueId()->toString()] = $newUses;
+        return $playerAmount;
     }
 
     /**
@@ -231,23 +187,6 @@ class DynamicCrateReward extends CrateReward
     public function isReplaceable(): bool
     {
         return $this->canReplace;
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    public function getRewardedPlayers(): array
-    {
-        return $this->rewardedPlayers;
-    }
-
-    /**
-     * @param array<string, int> $rewardedPlayers
-     * @return void
-     */
-    public function setRewardedPlayers(array $rewardedPlayers): void
-    {
-        $this->rewardedPlayers = $rewardedPlayers;
     }
 
 }

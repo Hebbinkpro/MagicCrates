@@ -24,6 +24,7 @@ use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreateCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyAllCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemoveCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\CrateResetCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 
@@ -36,6 +37,7 @@ class MagicCratesCommand extends BaseCommand
         $sender->sendMessage("- /mc remove => Toggle crate remove mode");
         $sender->sendMessage("- /mc key <type> [amount] [player] => Give a crate key to a player");
         $sender->sendMessage("- /mc keyall <type> [amount] => Give crate keys to all online players");
+        $sender->sendMessage("- /mc reset <type> [player] => Reset all dynamic rewards of a crate type or player");
     }
 
     protected function prepare(): void
@@ -51,6 +53,7 @@ class MagicCratesCommand extends BaseCommand
         $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Toggle crate remove mode"));
         $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Give a crate key to a player"));
         $this->registerSubCommand(new CrateKeyAllCommand($plugin, "keyall", "Give crate keys to all online players"));
+        $this->registerSubCommand(new CrateResetCommand($plugin, "reset", "Reset all dynamic rewards of a crate type or player"));
     }
 
 
