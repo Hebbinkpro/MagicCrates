@@ -43,18 +43,19 @@ class CrateResetCommand extends BaseSubCommand
 
         if (!isset($args["player"])) {
             $crateType->resetRewards();
-            $sender->sendMessage(MagicCrates::getPrefix() . " §aAll rewards for crate type {$crateType->getName()} have been reset!");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §aAll rewards in crate type {$crateType->getId()} have been reset!");
             return;
         }
 
-        $player = Server::getInstance()->getPlayerExact($args["player"]);
+        $player = Server::getInstance()->getOfflinePlayer($args["player"]);
         if ($player === null) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cThe given player is currently not online");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cThe given player does not exist");
             return;
         }
+
 
         $crateType->resetPlayerRewards($player);
-        $sender->sendMessage(MagicCrates::getPrefix() . " §aThe rewards for {$player->getName()} have been reset!");
+        $sender->sendMessage(MagicCrates::getPrefix() . " §aThe rewards for {$player->getName()} in crate type {$crateType->getId()} have been reset!");
     }
 
     /**

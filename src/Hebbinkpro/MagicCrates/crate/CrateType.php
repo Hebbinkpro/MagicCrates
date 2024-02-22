@@ -25,6 +25,7 @@ use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
+use pocketmine\player\IPlayer;
 use pocketmine\player\Player;
 
 class CrateType
@@ -413,7 +414,7 @@ class CrateType
      * @param Player $player
      * @return void
      */
-    public function resetPlayerRewards(Player $player): void
+    public function resetPlayerRewards(IPlayer $player): void
     {
         MagicCrates::getDatabase()->resetPlayerRewards($this, $player);
     }

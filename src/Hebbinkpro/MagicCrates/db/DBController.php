@@ -22,6 +22,7 @@ namespace Hebbinkpro\MagicCrates\db;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\crate\DynamicCrateReward;
+use pocketmine\player\IPlayer;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\promise\Promise;
@@ -133,7 +134,7 @@ class DBController
         $promiseResolver = new PromiseResolver();
         $this->database->executeSelect("data.rewards.get", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString()
+            "player" => $player->getName()
         ], function (array $rows) use ($promiseResolver) {
             $rewards = [];
             foreach ($rows as $row) {
@@ -159,7 +160,7 @@ class DBController
     {
         $this->database->executeGeneric("data.rewards.set", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString(),
+            "player" => $player->getName(),
             "reward" => $reward->getId(),
             "amount" => $amount
         ], null, function (SqlError $error) {
@@ -200,11 +201,11 @@ class DBController
      * @param Player $player
      * @return void
      */
-    public function resetPlayerRewards(CrateType $type, Player $player): void
+    public function resetPlayerRewards(CrateType $type, IPlayer $player): void
     {
         $this->database->executeGeneric("data.rewards.resetPlayer", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString()
+            "player" => $player->getName()
         ], null, function (SqlError $error) {
             $this->plugin->getLogger()->error($error->getErrorMessage());
         });
