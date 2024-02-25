@@ -59,11 +59,11 @@ class Crate
     }
 
     /**
-     * Decode an array to a Crate object
+     * Parse an array to a Crate object
      * @param array{x: int, y: int, z: int, world: string, type: string} $crate
      * @return Crate|null
      */
-    public static function decode(array $crate): ?Crate
+    public static function parse(array $crate): ?Crate
     {
         // check if the world with the given world name exists
         $worldName = $crate["world"];

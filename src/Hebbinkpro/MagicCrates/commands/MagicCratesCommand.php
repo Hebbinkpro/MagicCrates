@@ -21,10 +21,9 @@ namespace Hebbinkpro\MagicCrates\commands;
 
 use CortexPE\Commando\BaseCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreateCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyAllCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateKeyCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemoveCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateResetCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\key\CrateKeyCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\reward\CrateRewardCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 
@@ -35,16 +34,14 @@ class MagicCratesCommand extends BaseCommand
         $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
         $sender->sendMessage("- /mc create => Toggle crate create mode");
         $sender->sendMessage("- /mc remove => Toggle crate remove mode");
-        $sender->sendMessage("- /mc key <type> [amount] [player] => Give a crate key to a player");
-        $sender->sendMessage("- /mc keyall <type> [amount] => Give crate keys to all online players");
-        $sender->sendMessage("- /mc reset <type> [player] => Reset all dynamic rewards of a crate type or player");
+        $sender->sendMessage("- /mc key    => Give a crate key to a player");
+        $sender->sendMessage("- /mc reward => Manage crate rewards");
     }
 
     protected function prepare(): void
     {
-        $this->setAliases(["mc"]);
-
         $this->setPermission("magiccrates.cmd");
+        $this->setAliases(["mc"]);
 
         /** @var MagicCrates $plugin */
         $plugin = $this->getOwningPlugin();
@@ -52,8 +49,7 @@ class MagicCratesCommand extends BaseCommand
         $this->registerSubCommand(new CrateCreateCommand($plugin, "create", "Toggle crate create mode"));
         $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Toggle crate remove mode"));
         $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Give a crate key to a player"));
-        $this->registerSubCommand(new CrateKeyAllCommand($plugin, "keyall", "Give crate keys to all online players"));
-        $this->registerSubCommand(new CrateResetCommand($plugin, "reset", "Reset all dynamic rewards of a crate type or player"));
+        $this->registerSubCommand(new CrateRewardCommand($plugin, "reward", "Manage crate rewards"));
     }
 
 

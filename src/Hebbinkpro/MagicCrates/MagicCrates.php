@@ -27,6 +27,7 @@ use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\db\DBController;
 use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
+use Hebbinkpro\MagicCrates\migrate\Migrator;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
 use pocketmine\entity\EntityDataHelper;
@@ -110,23 +111,23 @@ class MagicCrates extends PluginBase
         self::$prefix = $this->getConfig()->get("prefix", self::$prefix);
         self::$keyName = $this->getConfig()->get("key-prefix", self::$keyName);
 
+        // create the database controller
         $this->database = new DBController($this);
+        $this->database->load();
 
-        $p = $this->database->getAllCrates();
-        $p->onCompletion(fn(array $crates) => var_dump($crates), fn() => var_dump("Oh No"));
-
-
-        // load the types and created crates
+        // load the crate types
         $this->loadCrateTypes();
 
+        // migrate all things
+        Migrator::migrate($this);
+
+        // load all the crates
         $this->loadCrates();
 
         $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
 
-        // store the data every 6000 ticks (~5 minutes)
-//        $this->getScheduler()->scheduleRepeatingTask(new StoreDataTask($this), 6000);
     }
 
     private function loadCrateTypes(): void
@@ -153,8 +154,6 @@ class MagicCrates extends PluginBase
             } else {
                 $this->getLogger()->info("Loaded crate type: $id");
             }
-
-
         }
     }
 
@@ -164,17 +163,14 @@ class MagicCrates extends PluginBase
      */
     private function loadCrates(): void
     {
-        $promise = $this->database->getAllCrates();
-        $promise->onCompletion(function (array $crates) {
+        $this->database->getAllCrates()->onCompletion(function (array $crates) {
             // register all crates
             foreach ($crates as $crate) {
                 Crate::registerCrate($crate);
             }
 
             $this->getLogger()->info("All crates are loaded");
-        }, fn() => $this->getLogger()->error("Could not get the crates from the database"));
-
-
+        }, fn() => $this->getLogger()->error("Could not load the crates from the database"));
     }
 
     public function onDisable(): void

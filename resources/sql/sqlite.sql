@@ -81,7 +81,31 @@ WHERE type = :type
 SELECT reward, SUM(amount) AS total
 FROM Rewards
 WHERE type = :type
-GROUP BY reward
+GROUP BY reward;
+-- #}
+-- #{       reset
+-- #            :type string
+DELETE
+FROM Rewards
+WHERE type = :type;
+-- #}
+-- #{       resetPlayer
+-- #            :type string
+-- #            :player string
+DELETE
+FROM Rewards
+WHERE type = :type
+  AND player = :player;
+-- #}
+-- #{       resetPlayerReward
+-- #            :type string
+-- #            :player string
+-- #            :reward string
+DELETE
+FROM Rewards
+WHERE type = :type
+  AND player = :player
+  AND reward = :reward;
 -- #}
 -- #}
 -- #}

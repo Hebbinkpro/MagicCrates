@@ -25,7 +25,6 @@ use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
 use pocketmine\item\VanillaItems;
-use pocketmine\player\IPlayer;
 use pocketmine\player\Player;
 
 class CrateType
@@ -351,11 +350,13 @@ class CrateType
                         [$rewards, $totalAmount] = $this->determinePlayerRewards($totalRewards, $playerRewarded);
 
                         call_user_func($callback, $rewards, $playerRewarded, $totalAmount);
-                    }, function () {
-                        var_dump("Could not complete the promise");
+                    }, function () use ($callback) {
+                        call_user_func($callback, [], [], 0);
                     });
 
-            }, fn() => null);
+            }, function () use ($callback) {
+                call_user_func($callback, [], [], 0);
+            });
     }
 
     protected function determinePlayerRewards(array $rewardTotals, array $playerRewarded): array
@@ -407,24 +408,5 @@ class CrateType
         }
 
         return [$rewards, $totalAmount];
-    }
-
-    /**
-     * Reset all rewards of the given player
-     * @param Player $player
-     * @return void
-     */
-    public function resetPlayerRewards(IPlayer $player): void
-    {
-        MagicCrates::getDatabase()->resetPlayerRewards($this, $player);
-    }
-
-    /**
-     * Reset all rewards from this type
-     * @return void
-     */
-    public function resetRewards(): void
-    {
-        MagicCrates::getDatabase()->resetRewards($this);
     }
 }

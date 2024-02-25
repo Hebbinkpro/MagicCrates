@@ -17,7 +17,7 @@
  * (at your option) any later version.
  */
 
-namespace Hebbinkpro\MagicCrates\commands\subcommands;
+namespace Hebbinkpro\MagicCrates\commands\subcommands\key;
 
 
 use CortexPE\Commando\args\IntegerArgument;
@@ -29,6 +29,7 @@ use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
+use pocketmine\plugin\PluginBase;
 
 class CrateKeyCommand extends BaseSubCommand
 {
@@ -91,6 +92,10 @@ class CrateKeyCommand extends BaseSubCommand
     {
 
         $this->setPermission("magiccrates.cmd.key");
+
+        /** @var PluginBase $plugin */
+        $plugin = $this->getOwningPlugin();
+        $this->registerSubCommand(new CrateKeyAllCommand($plugin, "all", "Give a crate key to all online players", ["everyone"]));
 
         $this->registerArgument(0, new CrateTypeArgument("type"));
         $this->registerArgument(1, new IntegerArgument("amount", true));

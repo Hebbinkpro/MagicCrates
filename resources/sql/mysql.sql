@@ -76,6 +76,12 @@ FROM Rewards
 WHERE type = :type
 GROUP BY reward;
 -- #}
+-- #{       reset
+-- #            :type string
+DELETE
+FROM Rewards
+WHERE type = :type;
+-- #}
 -- #{       resetPlayer
 -- #            :type string
 -- #            :player string
@@ -84,11 +90,15 @@ FROM Rewards
 WHERE type = :type
   AND player = :player;
 -- #}
--- #{       reset
+-- #{       resetPlayerReward
 -- #            :type string
+-- #            :player string
+-- #            :reward string
 DELETE
 FROM Rewards
-WHERE type = :type;
+WHERE type = :type
+  AND player = :player
+  AND reward = :reward;
 -- #}
 -- #}
 -- #}

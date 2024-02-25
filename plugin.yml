@@ -23,9 +23,15 @@ permissions:
   magiccrates.cmd.key.all:
     default: op
     description: Access to the /magiccrates keyall command
-  magiccrates.cmd.reset:
+  magiccrates.cmd.reward:
     default: op
-    description: Access to the /magiccrates reset command
+    description: Access to the /magiccrates reward command
+  magiccrates.cmd.reward.set:
+    default: op
+    description: Access to the /magiccrates reward set command
+  magiccrates.cmd.reward.reset:
+    default: op
+    description: Access to the /magiccrates reward reset command
   magiccrates.break:
     default: false
   magiccrates.break.remove:
