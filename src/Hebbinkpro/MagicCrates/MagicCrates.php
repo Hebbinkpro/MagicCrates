@@ -26,32 +26,57 @@ use Hebbinkpro\MagicCrates\commands\MagicCratesCommand;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\db\DBController;
+use Hebbinkpro\MagicCrates\entity\CrateItemEntity;
 use Hebbinkpro\MagicCrates\entity\CrateRewardItemEntity;
 use Hebbinkpro\MagicCrates\migrate\Migrator;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
-use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
+use Hebbinkpro\MagicCrates\utils\ItemUtils;
+use JackMD\ConfigUpdater\ConfigUpdater;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
+use pocketmine\item\Item;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\plugin\PluginBase;
-use pocketmine\Server;
 use pocketmine\world\World;
 
 class MagicCrates extends PluginBase
 {
-    private static string $prefix = "§r[§6Magic§cCrates§r]";
-    private static string $keyName = "§r[§6Crate §cKey§r] §e{crate}";
+    public const CONFIG_VERSION = 1;
+    public const DEFAULT_PREFIX = "§r[§6Magic§cCrates§r]";
+    public const DEFAULT_KEY_ITEM = "minecraft:paper";
+    public const DEFAULT_KEY_NAME = "§r[§6Crate §cKey§r] §e{crate}";
     private static MagicCrates $instance;
+    private string $prefix;
+    private string $keyName;
+    private string $keyItem;
     private DBController $database;
 
+
+    /**
+     * Get the MagicCrates prefix
+     * @return string
+     */
     public static function getPrefix(): string
     {
-        return self::$prefix;
+        return self::$instance->prefix;
     }
 
+    /**
+     * Get the name of the crate key
+     * @return string
+     */
     public static function getKeyName(): string
     {
-        return self::$keyName;
+        return self::$instance->keyName;
+    }
+
+    /**
+     * Get a new item instance for the crate key
+     * @return Item
+     */
+    public static function getKeyItem(): Item
+    {
+        return ItemUtils::getItemFromId(self::$instance->keyItem);
     }
 
     /**
@@ -66,20 +91,6 @@ class MagicCrates extends PluginBase
     }
 
     /**
-     * Check if a plugin is enabled
-     * @param string $pluginName
-     * @return bool
-     */
-    public static function isPluginEnabled(string $pluginName): bool
-    {
-
-        $plManager = Server::getInstance()->getPluginManager();
-        $plugin = $plManager->getPlugin($pluginName);
-
-        return $plugin !== null && $plugin->isEnabled();
-    }
-
-    /**
      * Get the database controller
      * @return DBController
      */
@@ -90,10 +101,14 @@ class MagicCrates extends PluginBase
 
     public function onLoad(): void
     {
-        // register the crate item entity
+        // register the crate item entities
+        EntityFactory::getInstance()->register(CrateItemEntity::class, function (World $world, CompoundTag $nbt): CrateItemEntity {
+            return new CrateItemEntity(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+        }, ['CrateItem']);
+
         EntityFactory::getInstance()->register(CrateRewardItemEntity::class, function (World $world, CompoundTag $nbt): CrateRewardItemEntity {
             return new CrateRewardItemEntity(EntityDataHelper::parseLocation($nbt, $world), $nbt);
-        }, ['CrateItem']);
+        }, ['CrateRewardItem']);
     }
 
     /**
@@ -104,12 +119,8 @@ class MagicCrates extends PluginBase
         self::$instance = $this;
 
         if (!PacketHooker::isRegistered()) PacketHooker::register($this);
-        CrateCommandSender::register($this);
 
-        // store the config
-        $this->saveDefaultConfig();
-        self::$prefix = $this->getConfig()->get("prefix", self::$prefix);
-        self::$keyName = $this->getConfig()->get("key-prefix", self::$keyName);
+        $this->loadConfig();
 
         // create the database controller
         $this->database = new DBController($this);
@@ -127,9 +138,38 @@ class MagicCrates extends PluginBase
         $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
-
     }
 
+    /**
+     * Load all values from the config
+     * @return void
+     */
+    private function loadConfig(): void
+    {
+        // save the default config
+        $this->saveDefaultConfig();
+        // update the config if needed
+        ConfigUpdater::checkUpdate($this, $this->getConfig(), "version", self::CONFIG_VERSION);
+
+        $this->prefix = $this->getConfig()->get("prefix", self::DEFAULT_PREFIX);
+
+        $keySettings = $this->getConfig()->get("key", ["item" => self::DEFAULT_KEY_ITEM, "name" => self::DEFAULT_KEY_NAME]);
+
+        // check if the given item is valid, otherwise use the default item
+        $keyItem = ItemUtils::getItemFromId($keySettings["item"]);
+        if ($keyItem === null) {
+            $this->getLogger()->warning("Cannot find the key item " . $keySettings["item"] . ". The default item (" . self::DEFAULT_KEY_ITEM . ") will be used instead.");
+            $keySettings["item"] = self::DEFAULT_KEY_ITEM;
+        }
+
+        $this->keyItem = $keySettings["item"];
+        $this->keyName = $keySettings["name"];
+    }
+
+    /**
+     * Load all crate types from the JSON file.
+     * @return void
+     */
     private function loadCrateTypes(): void
     {
         // check if crate_types.json exists, otherwise load the file
@@ -158,7 +198,7 @@ class MagicCrates extends PluginBase
     }
 
     /**
-     * Load all crates from the json file
+     * Load all crates from the database
      * @return void
      */
     private function loadCrates(): void
@@ -170,7 +210,9 @@ class MagicCrates extends PluginBase
             }
 
             $this->getLogger()->info("All crates are loaded");
-        }, fn() => $this->getLogger()->error("Could not load the crates from the database"));
+        }, function () {
+            $this->getLogger()->error("Could not load the crates from the database");
+        });
     }
 
     public function onDisable(): void

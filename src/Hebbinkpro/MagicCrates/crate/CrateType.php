@@ -21,10 +21,10 @@ namespace Hebbinkpro\MagicCrates\crate;
 
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
+use Hebbinkpro\MagicCrates\utils\StringUtils;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 
 class CrateType
@@ -93,7 +93,7 @@ class CrateType
                     else {
                         $rewardReplacement = CrateReward::parse($i, $rewardData["replacement"], $errorMsg, false);
                         if ($rewardReplacement === null) {
-                            $errorMsg = "Could not parse the replacement reward for reward {$reward->getId()}: $errorMsg";
+                            $errorMsg = "Could not parse the replacement reward for reward {$reward->getId()} in type $id: $errorMsg";
                             return null;
                         }
                         $rewardReplacement[$reward->getId()] = $rewardReplacement;
@@ -183,11 +183,7 @@ class CrateType
      */
     public static function getAllTypeIds(): array
     {
-        $ids = [];
-        foreach (self::$crateTypes as $type) {
-            $ids[] = $type->getId();
-        }
-        return $ids;
+        return array_keys(self::$crateTypes);
     }
 
     public function getRewardById(string $id): ?CrateReward
@@ -200,7 +196,7 @@ class CrateType
 
         $values = [
             "player" => $player->getName(),
-            "crate_type" => $this->getId(),// TODO remove this parameter
+            "crate_type" => $this->getId(),
             "crate_id" => $this->getId(),
             "crate" => $this->getName(),
             "reward_id" => $reward->getId(),
@@ -210,7 +206,7 @@ class CrateType
         $commands = array_merge($this->commands, $reward->getCommands());
 
         foreach ($commands as $cmd) {
-            CrateCommandSender::executePreparedCommand($cmd, $values);
+            CrateCommandSender::getInstance()->executeCommand(StringUtils::prepare($cmd, $values));
         }
     }
 
@@ -273,12 +269,12 @@ class CrateType
 
     public function getCrateKey(): Item
     {
-        $keyName = CrateCommandSender::prepare(MagicCrates::getKeyName(), [
+        $keyName = StringUtils::prepare(MagicCrates::getKeyName(), [
             "crate" => $this->getName(),
             "crate_id" => $this->getId()
         ]);
 
-        $key = VanillaItems::PAPER();
+        $key = MagicCrates::getKeyItem();
         $key->setCustomName($keyName);
         $key->setLore([MagicCrates::getPrefix()]);
         $key->addEnchantment(new EnchantmentInstance(VanillaEnchantments::UNBREAKING(), 1));

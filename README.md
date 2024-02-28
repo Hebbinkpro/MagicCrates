@@ -11,8 +11,8 @@ Add customizable crates to your server.
 ## Downloads
 
 - Stable release: [![Poggit](https://poggit.pmmp.io/shield.api/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
-- Newest
-  release: [![Poggit CI](https://poggit.pmmp.io/shield.state/MagicCrates)](https://poggit.pmmp.io/ci/Hebbinkpro/MagicCrates/MagicCrates)
+- Latest
+  release: [Poggit CI](https://poggit.pmmp.io/ci/Hebbinkpro/MagicCrates/MagicCrates)
 
 ## How to use
 
@@ -20,13 +20,15 @@ Add customizable crates to your server.
 
 Command aliases: `/magiccrates`, `/mc`
 
-| Command                                           | Description                            | Permission-             |
-|---------------------------------------------------|----------------------------------------|-------------------------|
-| `/magiccrates`                                    | MagicCrates Command                    | magiccrates.cmd         |
-| `/magiccrates create`                             | Create a crate                         | magiccrates.cmd.create  |
-| `/magiccrates remove`                             | Remove a crate                         | magiccrates.cmd.remove  |
-| `/magiccrates key <crate_type> [amount] [player]` | Give a crate key to a player           | magiccrates.cmd.key     |
-| `/magiccrates keyall <crate_type> [amount]`       | Give a crate key to all online players | magiccrates.cmd.key.all |
+| Command                                                           | Description                            | Permission-             |
+|-------------------------------------------------------------------|----------------------------------------|-------------------------|
+| `/magiccrates`                                                    | MagicCrates Command                    | magiccrates.cmd         |
+| `/magiccrates create`                                             | Create a crate                         | magiccrates.cmd.create  |
+| `/magiccrates remove`                                             | Remove a crate                         | magiccrates.cmd.remove  |
+| `/magiccrates key <crate_type> [amount] [player]`                 | Give a crate key to a player           | magiccrates.cmd.key     |
+| `/magiccrates key all <crate_type> [amount]`                      | Give a crate key to all online players | magiccrates.cmd.key.all |
+| `/magiccrates reward set <crate_type> <player> <reward> <amount>` |                                        |                         |
+| `/magiccrates reward reset <crate_type> [reward]`                 |                                        |                         |
 
 ### Create a new crate
 

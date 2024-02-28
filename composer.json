@@ -13,10 +13,11 @@
     "pocketmine/pocketmine-mp": "^5.0.0",
     "muqsit/simple-packet-handler": "dev-pm5",
     "vecnavium/formsui": "dev-master",
-    "sof3/libasynql": "4.2.2"
+    "sof3/libasynql": "4.2.2",
+    "ifera-mc/config-updater": "dev-master"
   },
   "require-dev": {
-    "paroxity/commando": "^3.1.0"
+    "paroxity/commando": "dev-master"
   },
   "autoload": {
     "psr-4": {
@@ -28,9 +29,21 @@
       "type": "package",
       "package": {
         "name": "paroxity/commando",
-        "version": "3.1.0",
+        "version": "dev-master",
         "source": {
           "url": "https://github.com/Paroxity/Commando.git",
+          "type": "git",
+          "reference": "master"
+        }
+      }
+    },
+    "config-updater": {
+      "type": "package",
+      "package": {
+        "name": "ifera-mc/config-updater",
+        "version": "dev-master",
+        "source": {
+          "url": "https://github.com/ifera-mc/ConfigUpdater.git",
           "type": "git",
           "reference": "master"
         }

@@ -28,24 +28,24 @@ use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\Server;
 
-class CrateKeyAllCommand extends BaseSubCommand
+class KeyAllCommand extends BaseSubCommand
 {
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         // check if the crate type exists, you never know
         if (($type = CrateType::getById($args["type"])) === null) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type.");
             return;
         }
 
         // get the amount of keys
         $amount = $args["amount"] ?? 1;
 
-            // negative or zero amount is given
-            if ($amount <= 0) {
-                $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be >= 1");
-                return;
-            }
+        // negative or zero amount is given
+        if ($amount <= 0) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be greater or equal then 1");
+            return;
+        }
 
         $typeName = $type->getName();
         $s = ($amount > 1 ? "s" : "");
@@ -53,10 +53,10 @@ class CrateKeyAllCommand extends BaseSubCommand
         // give all online players a crate key
         foreach (Server::getInstance()->getOnlinePlayers() as $player) {
             $type->giveCrateKey($player, $amount);
-            $player->sendMessage(MagicCrates::getPrefix() . " §aYou received $amount $typeName §r§akey$s");
+            $player->sendMessage(MagicCrates::getPrefix() . " §aYou have received {$amount}x $typeName §r§akey$s.");
         }
 
-        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players received $amount $typeName §r§ekey$s");
+        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players have received {$amount}x $typeName §r§ekey$s.");
     }
 
     /**

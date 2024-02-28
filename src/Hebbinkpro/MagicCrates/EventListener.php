@@ -19,12 +19,16 @@
 
 namespace Hebbinkpro\MagicCrates;
 
+use Hebbinkpro\MagicCrates\action\CrateAction;
+use Hebbinkpro\MagicCrates\action\PlayerCrateActions;
 use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\utils\CrateForm;
-use Hebbinkpro\MagicCrates\utils\PlayerData;
+use pocketmine\block\Block;
 use pocketmine\block\Chest;
 use pocketmine\block\tile\Chest as TileChest;
 use pocketmine\event\block\BlockBreakEvent;
+use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\ChestPairEvent;
 use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\Listener;
@@ -32,7 +36,6 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\item\Item;
 use pocketmine\player\Player;
-use pocketmine\world\Position;
 
 class EventListener implements Listener
 {
@@ -40,75 +43,89 @@ class EventListener implements Listener
     {
         $block = $e->getBlock();
 
-        // when block isn't a chest or when it's a left click interaction return
-        if (!$block instanceof Chest || $e->getAction() == PlayerInteractEvent::LEFT_CLICK_BLOCK) return;
+        // when block isn't a chest or when it's not a right click interaction return
+        if (!$block instanceof Chest || $e->getAction() != PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
 
         $pos = $block->getPosition();
 
         // get the chest tile
         $tile = $pos->getWorld()->getTile($pos);
-        // the crate isn't a TileChest, or it's a double chest
+        // the crate isn't a TileChest
         if (!$tile instanceof TileChest) return;
 
         $player = $e->getPlayer();
-        $playerAction = PlayerData::getInstance()->getInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
-
-        if ($tile->isPaired() && $playerAction > PlayerData::ACTION_NONE) {
-            $player->sendMessage(MagicCrates::getPrefix() . "§c You cannot interact with a paired chest!");
-            $e->cancel();
-            return;
-        }
-
+        $playerAction = PlayerCrateActions::getInstance()->getAction($player);
         $crate = Crate::getByPosition($block->getPosition());
 
-        // check if player is creating a crate
-        if ($playerAction == PlayerData::ACTION_CRATE_CREATE) {
-            $this->createCrate($player, $crate, $pos);
-            $e->cancel();
-            return;
-        }
+        // no player action
+        if ($playerAction === CrateAction::NONE) {
+            // it's a default chest
+            if ($crate === null) return;
 
-        // check if player is removing a crate
-        if ($playerAction == PlayerData::ACTION_CRATE_REMOVE) {
-            $this->removeCrate($player, $crate);
+            // open the crate
             $e->cancel();
-            return;
-        }
-
-        if ($crate !== null) {
             $item = $e->getItem();
             $this->openCrate($player, $crate, $item);
-            $e->cancel();
-        }
-    }
 
-
-    private function createCrate(Player $player, ?Crate $crate, Position $pos): void
-    {
-
-        if ($crate !== null) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cThere is already a crate on this position.");
             return;
         }
 
-        PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
-
-        $form = new CrateForm($pos);
-        $form->sendCreateForm($player);
+        $this->handleCrateAction($player, $block);
+        $e->cancel();
     }
 
-    private function removeCrate(Player $player, ?Crate $crate): void
+    private function handleCrateAction(Player $player, Block $block): void
     {
+        $action = PlayerCrateActions::getInstance()->getAction($player);
+        $crate = Crate::getByPosition($block->getPosition());
 
-        if ($crate === null) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cThere is no crate on this position.");
-            return;
+        switch ($action) {
+            case CrateAction::CREATE:
+                $tile = $player->getWorld()->getTile($block->getPosition());
+                // the block is not a chest
+                if (!$tile instanceof TileChest) {
+                    $player->sendMessage(MagicCrates::getPrefix() . "§cInteract with a chest to create a new crate.");
+                    return;
+                }
+
+                // the chest is not empty
+                if (sizeof($tile->getInventory()->getContents()) > 0) {
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cYou can only interact with an empty chest.");
+                    return;
+                }
+
+                // we interacted with a paired chest
+                if ($tile->isPaired()) {
+                    $player->sendMessage(MagicCrates::getPrefix() . "§cYou cannot interact with a paired chest.");
+                    return;
+                }
+
+                // check if player is creating a crate
+                if ($crate !== null) {
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cThere is already a crate at this position.");
+                    return;
+                }
+
+                CrateForm::sendCreateForm($player, $block->getPosition());
+                break;
+
+            case CrateAction::REMOVE:
+                if ($crate === null) {
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cThere is no crate at this position.");
+                    return;
+                }
+
+                // send the remove form
+                CrateForm::sendRemoveForm($player, $crate);
+                break;
+
+            case CrateAction::NONE:
+                break;
         }
 
-        PlayerData::getInstance()->setInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
+        // reset the player action
+        PlayerCrateActions::getInstance()->setAction($player, CrateAction::NONE);
 
-        $form = new CrateForm($crate->getPos());
-        $form->sendRemoveForm($player);
     }
 
     private function openCrate(Player $player, Crate $crate, Item $item): void
@@ -122,33 +139,72 @@ class EventListener implements Listener
         $type = $crate->getType();
 
         if (!$type->isValidKey($item)) {
-            $form = new CrateForm($crate->getPos());
-            $form->sendPreviewForm($player);
+            if (($typeId = $item->getNamedTag()->getString(CrateType::KEY_NBT_TAG)) !== null) {
+                // the player interacted with an item with the key nbt tag
+                if (($expectedCrate = CrateType::getById($typeId)) !== null) {
+                    // there is a crate type with the id in the tag
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cYou can only open a {$expectedCrate->getName()}§r§c crate with this key.");
+                    return;
+                }
+            }
+
+            // send the crate preview form
+            CrateForm::sendPreviewForm($player, $crate);
             return;
         }
 
         $crate->openWithKey($player, $item);
     }
 
+    public function onBlockPlace(BlockPlaceEvent $e): void
+    {
+        $player = $e->getPlayer();
+        $playerAction = PlayerCrateActions::getInstance()->getAction($player);
+
+        if ($playerAction !== CrateAction::NONE) {
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou cannot place blocks while in crate creation or remove mode.");
+            $e->cancel();
+        }
+    }
+
     public function onBlockBreak(BlockBreakEvent $e): void
     {
         $player = $e->getPlayer();
-        $playerAction = PlayerData::getInstance()->getInt($player, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
-
-        if ($playerAction > PlayerData::ACTION_NONE) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cYou can't break blocks while in crate create or remove mode");
-            $e->cancel();
-            return;
-        }
+        $playerAction = PlayerCrateActions::getInstance()->getAction($player);
 
         $block = $e->getBlock();
         $crate = Crate::getByPosition($block->getPosition());
 
-        if ($player->hasPermission("magiccrates.break.remove") && $crate !== null) {
-            $form = new CrateForm($crate->getPos());
-            $form->sendRemoveForm($player);
-            $e->cancel();
+        if ($crate === null) {
+            // crate create mode is enabled
+            if ($playerAction === CrateAction::CREATE) {
+                $this->handleCrateAction($player, $block);
+                $e->cancel();
+                return;
+            }
+
+            // crate create or remove mode is enabled
+            if ($playerAction !== CrateAction::NONE) {
+                $player->sendMessage(MagicCrates::getPrefix() . " §cYou cannot break blocks while in crate creation or remove mode.");
+                $e->cancel();
+                return;
+            }
+
+            return;
         }
+
+
+        // cancel the event
+        $e->cancel();
+
+        if (!$player->hasPermission("magiccrates.break.remove")) {
+            // the player is not allowed to break a crate
+            $player->sendMessage(MagicCrates::getPrefix() . "§cYou cannot break crates.");
+            return;
+        }
+
+        // try and handle the players crate action
+        $this->handleCrateAction($player, $block);
     }
 
     public function onChestPair(ChestPairEvent $e): void

@@ -38,7 +38,7 @@ class Crate
 {
 
 
-    /** @var Crate[][] */
+    /** @var array<string, Crate[][][]> */
     private static array $crates = [];
 
     private Vector3 $pos;
@@ -59,7 +59,7 @@ class Crate
     }
 
     /**
-     * Parse an array to a Crate object
+     * Parse a crate
      * @param array{x: int, y: int, z: int, world: string, type: string} $crate
      * @return Crate|null
      */
@@ -88,20 +88,25 @@ class Crate
     }
 
     /**
-     * Add a crate to the cache so that it will be saved
+     * Add a crate to the cache
      * @param Crate $crate
      * @return bool
      */
     public static function registerCrate(Crate $crate): bool
     {
-        if (!isset(self::$crates[$crate->getWorldName()])) self::$crates[$crate->getWorldName()] = [];
+        $world = $crate->getWorldName();
 
-        $i = self::getPositionString($crate->getPos());
+        $pos = $crate->getPos();
+        [$x, $y, $z] = [$pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ()];
+
         // There already exists a crate at this position
-        if (isset(self::$crates[$crate->getWorldName()][$i])) return false;
+        if (isset(self::$crates[$world][$x][$y][$z])) return false;
 
-        // add the crate to the list
-        self::$crates[$crate->getWorldName()][$i] = $crate;
+        // add the crate to the cache
+        if (!isset(self::$crates[$world])) self::$crates[$world] = [];
+        if (!isset(self::$crates[$world][$x])) self::$crates[$world][$x] = [];
+        if (!isset(self::$crates[$world][$x][$y])) self::$crates[$world][$x][$y] = [];
+        self::$crates[$world][$x][$y][$z] = $crate;
 
         return true;
     }
@@ -113,16 +118,6 @@ class Crate
     public function getWorldName(): string
     {
         return $this->world;
-    }
-
-    /**
-     * Get the position string used as array index
-     * @param Vector3 $pos
-     * @return string
-     */
-    public static function getPositionString(Vector3 $pos): string
-    {
-        return "{$pos->getFloorX()},{$pos->getFloorY()},{$pos->getFloorZ()}";
     }
 
     /**
@@ -152,19 +147,14 @@ class Crate
     {
         if ($world === null) $world = $player->getWorld();
 
-        foreach (self::getCratesInWorld($world) as $crate) {
-            $crate->showFloatingText($player);
+        $crates = self::$crates[$world->getFolderName()] ?? [];
+        foreach ($crates as $yCrates) {
+            foreach ($yCrates as $zCrates) {
+                foreach ($zCrates as $crate) {
+                    $crate->showFloatingText();
+                }
+            }
         }
-    }
-
-    /**
-     * Get all crates inside the given world
-     * @param World $world
-     * @return Crate[]
-     */
-    public static function getCratesInWorld(World $world): array
-    {
-        return self::$crates[$world->getFolderName()] ?? [];
     }
 
     /**
@@ -199,7 +189,11 @@ class Crate
      */
     public static function getByPosition(Position $pos): ?Crate
     {
-        return self::getCratesInWorld($pos->getWorld())[self::getPositionString($pos)] ?? null;
+        $world = $pos->getWorld()->getFolderName();
+        [$x, $y, $z] = [$pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ()];
+
+        if (!isset(self::$crates[$world][$x][$y][$z])) return null;
+        return self::$crates[$world][$x][$y][$z];
     }
 
     /**
@@ -328,22 +322,8 @@ class Crate
      */
     public function remove(): void
     {
-        unset(self::$crates[$this->world][self::getPositionString($this->pos)]);
+        [$x, $y, $z] = [$this->pos->getFloorX(), $this->pos->getFloorY(), $this->pos->getFloorZ()];
+        unset(self::$crates[$this->world][$x][$y][$z]);
         MagicCrates::getDatabase()->removeCrate($this);
-    }
-
-    /**
-     * Encode a Crate object into an array
-     * @return array{x: int, y: int, z: int, world: string, type: string}
-     */
-    public function encode(): array
-    {
-        return [
-            "x" => $this->pos->getX(),
-            "y" => $this->pos->getY(),
-            "z" => $this->pos->getZ(),
-            "world" => $this->world,
-            "type" => $this->type->getId()
-        ];
     }
 }

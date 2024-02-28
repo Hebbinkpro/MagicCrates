@@ -82,6 +82,14 @@ DELETE
 FROM Rewards
 WHERE type = :type;
 -- #}
+-- #{       resetReward
+-- #            :type string
+-- #            :reward string
+DELETE
+FROM Rewards
+WHERE type = :type
+  AND reward = :reward;
+-- #}
 -- #{       resetPlayer
 -- #            :type string
 -- #            :player string

@@ -34,28 +34,29 @@ use Vecnavium\FormsUI\SimpleForm;
 
 class CrateForm
 {
-    private Position $pos;
-    private ?CrateType $type = null;
-
-    public function __construct(Position $pos)
-    {
-        $this->pos = $pos;
-    }
 
     /**
      * Send a form to the player to create a crate
      * @param Player $player
+     * @param Position $pos
      * @return void
      */
-    public function sendCreateForm(Player $player): void
+    public static function sendCreateForm(Player $player, Position $pos): void
     {
-        $types = CrateType::getAllTypeIds();
+        $form = new CustomForm(function (Player $player, $data) use ($pos) {
+            // data[1] is the value of the selected crate type
+            if (isset($data[1])) {
+                // get the selected type
+                $typeId = CrateType::getAllTypeIds()[$data[1]] ?? "";
+                $type = CrateType::getById($typeId);
 
-        $form = new CustomForm(function (Player $player, $data) use ($types) {
+                if ($type === null) {
+                    // this should not be possible, but you never know
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type selected");
+                    return;
+                }
 
-            if (isset($data)) {
-                $this->type = CrateType::getById($types[$data[1]]);
-                $this->submitCreate($player);
+                self::sendSubmitCreate($player, $pos, $type);
             }
 
         });
@@ -63,7 +64,7 @@ class CrateForm
         $form->setTitle(MagicCrates::getPrefix() . " - Create crate");
 
         $form->addLabel("Select the crate type for the new crate");
-        $form->addDropdown("Crate type", $types);
+        $form->addDropdown("Crate type", CrateType::getAllTypeIds(), 0);
 
         $player->sendForm($form);
 
@@ -72,15 +73,17 @@ class CrateForm
     /**
      * Send a form to the player to confirm the creation of a crate
      * @param Player $player
+     * @param Position $pos
+     * @param CrateType $type
      * @return void
      */
-    public function submitCreate(Player $player): void
+    public static function sendSubmitCreate(Player $player, Position $pos, CrateType $type): void
     {
-        $form = new ModalForm(function (Player $player, $data) {
+        $form = new ModalForm(function (Player $player, $data) use ($pos, $type) {
             if (!is_bool($data)) return;
 
             if ($data) {
-                $crate = new Crate($this->pos, $this->pos->getWorld(), $this->type);
+                $crate = new Crate($pos->asVector3(), $pos->getWorld(), $type);
                 if (!Crate::registerCrate($crate)) {
                     $player->sendMessage(MagicCrates::getPrefix() . " §cThere already exists a crate at this position");
                     return;
@@ -99,7 +102,7 @@ class CrateForm
 
         $form->setTitle(MagicCrates::getPrefix() . " - Create crate");
 
-        $form->setContent("Are you sure you want to create a §e{$this->type->getId()}§r crate?\n\nClick §asave§r to save the crate, or click §eCancel§r to cancel.");
+        $form->setContent("Are you sure you want to create a §e{$type->getId()}§r crate?\n\nClick §asave§r to save the crate, or click §eCancel§r to cancel.");
         $form->setButton1("§aSave");
         $form->setButton2("§eCancel");
 
@@ -109,15 +112,11 @@ class CrateForm
     /**
      * Send a form to a player to remove a crate
      * @param Player $player
+     * @param Crate $crate
      * @return void
      */
-    public function sendRemoveForm(Player $player): void
+    public static function sendRemoveForm(Player $player, Crate $crate): void
     {
-        $crate = Crate::getByPosition($this->pos);
-        if ($crate === null) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cNo crate found at this position.");
-            return;
-        }
 
         $form = new ModalForm(function (Player $player, $data) use ($crate) {
             if ($data === true) {
@@ -143,37 +142,32 @@ class CrateForm
     /**
      * Send a form to the player containing the contents of the crate
      * @param Player $player
+     * @param Crate $crate
      * @return void
      */
-    public function sendPreviewForm(Player $player): void
+    public static function sendPreviewForm(Player $player, Crate $crate): void
     {
-        $crate = Crate::getByPosition($this->pos);
-        if ($crate === null) {
-            $player->sendMessage(MagicCrates::getPrefix() . " No crate found at this position.");
-            return;
-        }
-
         $crate->getType()->getPlayerRewards($player, function (array $rewards, array $playerRewarded, int $totalRewards) use ($player, $crate) {
             $form = new SimpleForm(function (Player $player, $data) use ($crate, $playerRewarded, $totalRewards) {
-                {
-                    if (is_string($data)) {
-                        if ($data === "open") {
-                            $crate->openWithKey($player);
-                        } else if (str_starts_with($data, "reward_")) {
-                            // remove "reward_" from the name
-                            $rewardId = substr($data, 7);
-                            $reward = $crate->getType()->getRewardById($rewardId);
-                            if ($reward !== null) {
-                                // send the reward preview
-                                $this->sendCrateRewardPreviewForm($player, $crate, $reward, $playerRewarded[$rewardId] ?? 0, $totalRewards);
-                                return;
-                            }
 
-                            // this message should never occur, but it's here just in case
-                            $player->sendMessage("§cThe clicked reward does not exist in the crate.");
+                if (is_string($data)) {
+                    if ($data === "open") {
+                        $crate->openWithKey($player);
+                    } else if (str_starts_with($data, "reward_")) {
+                        // remove "reward_" from the name
+                        $rewardId = substr($data, 7);
+                        $reward = $crate->getType()->getRewardById($rewardId);
+                        if ($reward !== null) {
+                            // send the reward preview
+                            self::sendCrateRewardPreviewForm($player, $crate, $reward, $playerRewarded[$rewardId] ?? 0, $totalRewards);
+                            return;
                         }
+
+                        // this message should never occur, but it's here just in case
+                        $player->sendMessage("§cThe clicked reward does not exist in the crate.");
                     }
                 }
+
             });
 
             // set the form title
@@ -213,15 +207,10 @@ class CrateForm
      * @param int $totalRewards
      * @return void
      */
-    public function sendCrateRewardPreviewForm(Player $player, Crate $crate, CrateReward $reward, int $playerRewarded, int $totalRewards): void
+    public static function sendCrateRewardPreviewForm(Player $player, Crate $crate, CrateReward $reward, int $playerRewarded, int $totalRewards): void
     {
         $form = new SimpleForm(function (Player $player, $data) use ($crate) {
-            {
-                if ($data === "back") {
-                    $this->sendPreviewForm($player);
-                    return;
-                }
-            }
+            if ($data === "back") self::sendPreviewForm($player, $crate);
         });
 
         $amount = $reward->getAmount();

@@ -48,6 +48,7 @@ class StartCrateAnimationTask extends Task
         // we cannot spawn an item in an unloaded world
         if (($world = $this->crate->getWorld()) === null || !$world->isLoaded()) return;
 
+        // there are only commands in this the reward
         if (sizeof($this->reward->getItems()) == 0) {
             $this->spawnReward(null);
             return;
@@ -57,6 +58,12 @@ class StartCrateAnimationTask extends Task
         foreach ($this->reward->getItems() as $i => $item) {
             if ($i == 0) $this->spawnReward($item);
             else $this->spawnItem($item, $i);
+        }
+
+        // if there are items and commands, add the commands at the end
+        if (sizeof($this->reward->getCommands()) > 0) {
+            // set the spawn delay to the amount of items as size-1 will be used for the last item
+            $this->spawnItem(null, sizeof($this->reward->getItems()));
         }
     }
 
@@ -79,36 +86,35 @@ class StartCrateAnimationTask extends Task
     /**
      * Construct the NBT required for a CrateItemEntity
      * @param Item|null $displayItem
-     * @param int $itemCount
+     * @param int $spawnDelay
      * @return CompoundTag
      */
-    private function getNbt(?Item $displayItem, int $itemCount = 0): CompoundTag
+    private function getNbt(?Item $displayItem, int $spawnDelay = 0): CompoundTag
     {
         $pos = $this->crate->getPos();
         $spawnPos = $pos->add(0.5, 0, 0.5);
 
         $nbt = EntityUtils::createBaseNBT($spawnPos);
         $nbt->setString("owner", $this->player->getName());
-        $nbt->setFloat("spawn-y", $spawnPos->getY());
         $nbt->setString("crate-pos", serialize($pos->asVector3()));
-        $nbt->setInt("item-count", $itemCount);
+        $nbt->setInt("spawn-delay", $spawnDelay);
 
-        // only set the display item if it exists
+        // only set the display item if it exists, otherwise set the command count
         if ($displayItem !== null) $nbt->setTag("display-item", $displayItem->nbtSerialize());
+        else $nbt->setInt("command-count", sizeof($this->reward->getCommands()));
 
         return $nbt;
     }
 
     /**
      * Spawn a default Crate Item entity
-     * @param Item $displayItem
-     * @param int $itemCount
+     * @param Item|null $displayItem
+     * @param int $spawnDelay
      * @return void
      */
-    private function spawnItem(Item $displayItem, int $itemCount): void
+    private function spawnItem(?Item $displayItem, int $spawnDelay): void
     {
-
-        $nbt = $this->getNbt($displayItem, $itemCount);
+        $nbt = $this->getNbt($displayItem, $spawnDelay);
 
         $crateItem = new CrateItemEntity(EntityDataHelper::parseLocation($nbt, $this->crate->getWorld()), $nbt);
         $crateItem->spawnToAll();

@@ -263,6 +263,28 @@ class DBController
     }
 
     /**
+     * Remove all rewards from a given type
+     * @param CrateType $type
+     * @param DynamicCrateReward $reward
+     * @return Promise
+     */
+    public function resetReward(CrateType $type, DynamicCrateReward $reward): Promise
+    {
+        $promiseResolver = new PromiseResolver();
+        $this->database->executeGeneric("data.rewards.resetReward", [
+            "type" => $type->getId(),
+            "reward" => $reward->getId()
+        ], function () use ($promiseResolver) {
+            $promiseResolver->resolve(null);
+        }, function (SqlError $error) use ($promiseResolver) {
+            $this->plugin->getLogger()->warning($error->getErrorMessage());
+            $promiseResolver->reject();
+        });
+
+        return $promiseResolver->getPromise();
+    }
+
+    /**
      * Remove all rewards of a player from the given type
      * @param CrateType $type
      * @param Player $player

@@ -20,27 +20,34 @@
 namespace Hebbinkpro\MagicCrates\commands\subcommands\reward;
 
 use CortexPE\Commando\BaseSubCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\reward\reset\ResetCrateRewardsCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\reward\reset\ResetPlayerRewardsCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\reward\reset\ResetRewardCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\plugin\PluginBase;
 
-class CrateRewardCommand extends BaseSubCommand
+class RewardResetCommand extends BaseSubCommand
 {
+
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
-        $sender->sendMessage("- /mc reward set   => Set the rewards of a player");
-        $sender->sendMessage("- /mc reward reset => Reset the rewards of a crate or player");
+        $sender->sendMessage("- /mc reward reset crate  => Reset the amount of times all rewards in the crate are received");
+        $sender->sendMessage("- /mc reward reset reward => Reset the amount of times the reward is received in a crate type");
+        $sender->sendMessage("- /mc reward reset player => Reset the amount of times a player has received rewards");
     }
 
     protected function prepare(): void
     {
-        $this->setPermission("magiccrates.cmd.reward");
+        $this->setPermission("magiccrates.cmd.reward.reset");
 
         /** @var PluginBase $plugin */
         $plugin = $this->getOwningPlugin();
-        $this->registerSubCommand(new CrateRewardResetCommand($plugin, "reset", "Reset the rewards of a crate or player"));
-        $this->registerSubCommand(new CrateRewardSetCommand($plugin, "set", "Set the rewards of a player"));
+        $this->registerSubCommand(new ResetCrateRewardsCommand($plugin, "crate", "Reset the amount of times all rewards in the crate are received"));
+        $this->registerSubCommand(new ResetRewardCommand($plugin, "reward", "Reset the amount of times the reward is received in a crate type"));
+        $this->registerSubCommand(new ResetPlayerRewardsCommand($plugin, "player", "Reset the amount of times a player has received rewards"));
+
     }
 }

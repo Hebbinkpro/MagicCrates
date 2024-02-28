@@ -21,12 +21,13 @@ namespace Hebbinkpro\MagicCrates\commands\subcommands;
 
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
+use Hebbinkpro\MagicCrates\action\CrateAction;
+use Hebbinkpro\MagicCrates\action\PlayerCrateActions;
 use Hebbinkpro\MagicCrates\MagicCrates;
-use Hebbinkpro\MagicCrates\utils\PlayerData;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 
-class CrateRemoveCommand extends BaseSubCommand
+class RemoveCommand extends BaseSubCommand
 {
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
@@ -36,19 +37,20 @@ class CrateRemoveCommand extends BaseSubCommand
             return;
         }
 
-        $action = PlayerData::getInstance()->getInt($sender, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
+        $action = PlayerCrateActions::getInstance()->getAction($sender);
 
         switch ($action) {
-            case PlayerData::ACTION_CRATE_CREATE:
-                $sender->sendMessage(MagicCrates::getPrefix() . " §cCrate creation mode is currently §aenabled§c! Disable the crate creation mode with '/mc create' and try again");
+            case CrateAction::CREATE:
+                $sender->sendMessage(MagicCrates::getPrefix() . " §cCrate creation mode is currently §aenabled§c.");
+                $sender->sendMessage(MagicCrates::getPrefix() . " §eDisable the crate creation mode with '/mc create' and try again.");
                 break;
-            case PlayerData::ACTION_CRATE_REMOVE:
-                PlayerData::getInstance()->setInt($sender, PlayerData::ACTION_TAG, PlayerData::ACTION_NONE);
-                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate remove mode is now §cdisabled");
+            case CrateAction::REMOVE:
+                PlayerCrateActions::getInstance()->setAction($sender, CrateAction::NONE);
+                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate remove mode has been §cdisabled.");
                 break;
             default:
-                PlayerData::getInstance()->setInt($sender, PlayerData::ACTION_TAG, PlayerData::ACTION_CRATE_REMOVE);
-                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate remove mode is now §aenabled§e. Click on a crate to remove it");
+                PlayerCrateActions::getInstance()->setAction($sender, CrateAction::REMOVE);
+                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate remove mode has been §aenabled§e. Click on a crate to remove it.");
         }
     }
 

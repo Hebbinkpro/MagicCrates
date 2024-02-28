@@ -19,9 +19,7 @@
 
 namespace Hebbinkpro\MagicCrates\crate;
 
-use customiesdevs\customies\item\CustomiesItemFactory;
-use Exception;
-use Hebbinkpro\MagicCrates\MagicCrates;
+use Hebbinkpro\MagicCrates\utils\ItemUtils;
 use pocketmine\block\Air;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\StringToEnchantmentParser;
@@ -119,7 +117,7 @@ class CrateReward
 
         // amount = 0 is only valid for a DynamicReward
         if ($amount == 0) {
-            $errorMsg = "Amount should be at least 1!";
+            $errorMsg = "Amount should be at least 1.";
             return null;
         }
 
@@ -189,25 +187,10 @@ class CrateReward
             return null;
         }
 
-        $item = StringToItemParser::getInstance()->parse($itemData["id"]);
-
-        // it's not a vanilla item
+        $item = ItemUtils::getItemFromId($itemData["id"]);
         if ($item === null) {
-            // check if Customies is enabled
-            if (MagicCrates::isPluginEnabled("Customies")) {
-                // get the Customies item, and catch the error...
-                try {
-                    $item = CustomiesItemFactory::getInstance()->get($itemData["id"]);
-                } catch (Exception) {
-                    $item = null;
-                }
-            }
-
-            //  Customies does not have the item or customies is not available
-            if ($item === null) {
-                $errorMsg = "Invalid item id given: " . $itemData["id"];
-                return null;
-            }
+            $errorMsg = "Invalid item id given: " . $itemData["id"];
+            return null;
         }
 
         if (isset($itemData["name"])) $item->setCustomName(strval($itemData["name"]));

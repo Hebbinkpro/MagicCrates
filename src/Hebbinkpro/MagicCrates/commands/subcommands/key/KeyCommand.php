@@ -31,7 +31,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 
-class CrateKeyCommand extends BaseSubCommand
+class KeyCommand extends BaseSubCommand
 {
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
@@ -53,11 +53,11 @@ class CrateKeyCommand extends BaseSubCommand
         // get the amount of keys
         $amount = $args["amount"] ?? 1;
 
-            // negative or zero amount is given
-            if ($amount <= 0) {
-                $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be >= 1");
-                return;
-            }
+        // negative or zero amount is given
+        if ($amount <= 0) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid amount, should be >= 1");
+            return;
+        }
 
         // get the type name, used in the messages
         $typeName = $type->getName();
@@ -95,7 +95,7 @@ class CrateKeyCommand extends BaseSubCommand
 
         /** @var PluginBase $plugin */
         $plugin = $this->getOwningPlugin();
-        $this->registerSubCommand(new CrateKeyAllCommand($plugin, "all", "Give a crate key to all online players", ["everyone"]));
+        $this->registerSubCommand(new KeyAllCommand($plugin, "all", "Give a crate key to all online players", ["everyone"]));
 
         $this->registerArgument(0, new CrateTypeArgument("type"));
         $this->registerArgument(1, new IntegerArgument("amount", true));

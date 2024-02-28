@@ -19,6 +19,7 @@
 
 namespace Hebbinkpro\MagicCrates\migrate;
 
+use Exception;
 use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\plugin\PluginBase;
@@ -53,11 +54,15 @@ class Migrator
 
         $invalid = 0;
         foreach ($contents as $crateData) {
-            $crate = Crate::parse($crateData);
+            try {
+                $crate = Crate::parse($crateData);
+            } catch (Exception) {
+                $crate = null;
+            }
 
             if ($crate === null) {
                 // could not load the crate
-                $plugin->getLogger()->warning("Could not parse crate " . json_encode($crateData));
+                $plugin->getLogger()->warning("Could not parse crate:\n" . json_encode($crateData));
                 $invalid++;
                 continue;
             }
@@ -85,7 +90,7 @@ class Migrator
         unlink($file);
 
         if ($invalid == 0) {
-            $plugin->getLogger()->info("All crates are successfully migrated to the database");
+            $plugin->getLogger()->info("All crates are successfully migrated to the database.");
             return;
         }
 
@@ -117,7 +122,7 @@ class Migrator
                     MagicCrates::getDatabase()->setRawPlayerRewards($typeId, $playerUUID, $rewardId, $amount)->onCompletion(fn() => null,
                         function () use ($plugin, $typeId, $playerUUID, $rewardId, $amount) {
                             // something went wrong while setting the amount
-                            $plugin->getLogger()->warning("Cannot set the amount of rewards of player $playerUUID for reward $rewardId in crate $typeId");
+                            $plugin->getLogger()->warning("Cannot set the amount of rewards received by player $playerUUID for reward $rewardId in crate $typeId.");
                         });
                 }
             }

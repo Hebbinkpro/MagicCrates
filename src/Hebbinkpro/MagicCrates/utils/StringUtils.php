@@ -19,28 +19,24 @@
 
 namespace Hebbinkpro\MagicCrates\utils;
 
-use pocketmine\command\CommandSender;
-use pocketmine\console\ConsoleCommandSender;
-use pocketmine\Server;
-use pocketmine\utils\SingletonTrait;
-
-class CrateCommandSender
+class StringUtils
 {
-    use SingletonTrait;
+    public const PARAM_OPEN = "{";
+    public const PARAM_CLOSE = "}";
 
-    private CommandSender $sender;
-
-    public function __construct()
+    /**
+     * Replace all params inside the string with values of the given params
+     * @param string $str the string with parameters
+     * @param array $params the parameters to replace in the string
+     * @return string the string with the parameter values
+     */
+    public static function prepare(string $str, array $params): string
     {
-        $server = Server::getInstance();
-        $this->sender = new ConsoleCommandSender($server, $server->getLanguage());
-        $this->sender->recalculatePermissions();
+        foreach ($params as $name => $v) {
+            $param = self::PARAM_OPEN . $name . self::PARAM_CLOSE;
+            $str = str_replace($param, $v, $str);
+        }
+
+        return $str;
     }
-
-
-    public function executeCommand(string $command): void
-    {
-        Server::getInstance()->dispatchCommand($this->sender, $command);
-    }
-
 }

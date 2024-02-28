@@ -17,30 +17,11 @@
  * (at your option) any later version.
  */
 
-namespace Hebbinkpro\MagicCrates\utils;
+namespace Hebbinkpro\MagicCrates\action;
 
-use pocketmine\command\CommandSender;
-use pocketmine\console\ConsoleCommandSender;
-use pocketmine\Server;
-use pocketmine\utils\SingletonTrait;
-
-class CrateCommandSender
+enum CrateAction
 {
-    use SingletonTrait;
-
-    private CommandSender $sender;
-
-    public function __construct()
-    {
-        $server = Server::getInstance();
-        $this->sender = new ConsoleCommandSender($server, $server->getLanguage());
-        $this->sender->recalculatePermissions();
-    }
-
-
-    public function executeCommand(string $command): void
-    {
-        Server::getInstance()->dispatchCommand($this->sender, $command);
-    }
-
+    case NONE;
+    case CREATE;
+    case REMOVE;
 }

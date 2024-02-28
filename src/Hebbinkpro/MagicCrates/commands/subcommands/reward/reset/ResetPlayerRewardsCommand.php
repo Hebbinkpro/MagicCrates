@@ -17,9 +17,8 @@
  * (at your option) any later version.
  */
 
-namespace Hebbinkpro\MagicCrates\commands\subcommands\reward;
+namespace Hebbinkpro\MagicCrates\commands\subcommands\reward\reset;
 
-use CortexPE\Commando\args\IntegerArgument;
 use CortexPE\Commando\args\RawStringArgument;
 use CortexPE\Commando\args\TargetPlayerArgument;
 use CortexPE\Commando\BaseSubCommand;
@@ -31,42 +30,44 @@ use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\Server;
 
-class CrateRewardSetCommand extends BaseSubCommand
+class ResetPlayerRewardsCommand extends BaseSubCommand
 {
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         $crateType = CrateType::getById($args["crate_type"]);
+
         if ($crateType === null) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type.");
             return;
         }
 
-        $player = Server::getInstance()->getPlayerExact($args["player"]);
+        $player = Server::getInstance()->getPlayerExact($args["player"] ?? "");
         if ($player === null) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cThe given player is not online.");
             return;
         }
 
+        if (!isset($args["reward_id"])) {
+            // reset all rewards of th player from the given crate type
+            MagicCrates::getDatabase()->resetPlayerRewards($crateType, $player)->onCompletion(function () use ($sender, $crateType, $player) {
+                $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of all received rewards from {$player->getName()} in crate type {$crateType->getId()} have been reset!");
+
+            }, function () use ($sender) {
+                $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
+            });
+            return;
+        }
+
         $reward = $crateType->getRewardById($args["reward_id"]);
-        if ($reward === null) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cThe reward {$args["reward_id"]} does not exist.");
-            return;
-        }
-
         if (!$reward instanceof DynamicCrateReward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot set the reward amount for a non dynamic reward.");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot reset the received amount for a non dynamic reward.");
             return;
         }
 
-        $amount = $args["amount"];
-        if ($amount < 0) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cThe amount should be greater or equal then 0.");
-            return;
-        }
-
-        MagicCrates::getDatabase()->setPlayerRewards($crateType, $player, $reward, $amount)->onCompletion(function () use ($sender, $crateType, $player, $reward, $amount) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe reward amount of player {$player->getName()} for reward {$reward->getId()} in crate {$crateType->getId()} is set to $amount.");
+        // reset all rewards of the player from the given reward inside the crate type
+        MagicCrates::getDatabase()->resetPlayerReward($crateType, $player, $reward)->onCompletion(function () use ($sender, $crateType, $player, $reward) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of times {$player->getName()} has received reward {$reward->getId()} in crate type {$crateType->getId()} has been reset!");
         }, function () use ($sender) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
         });
@@ -77,11 +78,10 @@ class CrateRewardSetCommand extends BaseSubCommand
      */
     protected function prepare(): void
     {
-        $this->setPermission("magiccrates.cmd.reward.set");
+        $this->setPermission("magiccrates.cmd.reward.reset");
 
         $this->registerArgument(0, new CrateTypeArgument("crate_type"));
         $this->registerArgument(1, new TargetPlayerArgument(false, "player"));
-        $this->registerArgument(2, new RawStringArgument("reward_id"));
-        $this->registerArgument(3, new IntegerArgument("amount"));
+        $this->registerArgument(2, new RawStringArgument("reward_id", true));
     }
 }

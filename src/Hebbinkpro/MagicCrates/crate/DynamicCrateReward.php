@@ -104,10 +104,10 @@ class DynamicCrateReward extends CrateReward
     }
 
     /**
-     * The amount of this reward the player is able to get
+     * The amount of times the player can get the reward
      * @param int $totalAmount
      * @param int $playerAmount
-     * @return int the amount of times the player is able to get this reward
+     * @return int
      */
     public function getPlayerAmount(int $totalAmount, int $playerAmount): int
     {

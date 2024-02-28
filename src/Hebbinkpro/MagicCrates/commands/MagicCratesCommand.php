@@ -20,10 +20,10 @@
 namespace Hebbinkpro\MagicCrates\commands;
 
 use CortexPE\Commando\BaseCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateCreateCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\CrateRemoveCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\key\CrateKeyCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\reward\CrateRewardCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\CreateCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\key\KeyCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\RemoveCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\reward\RewardCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 
@@ -35,7 +35,7 @@ class MagicCratesCommand extends BaseCommand
         $sender->sendMessage("- /mc create => Toggle crate create mode");
         $sender->sendMessage("- /mc remove => Toggle crate remove mode");
         $sender->sendMessage("- /mc key    => Give a crate key to a player");
-        $sender->sendMessage("- /mc reward => Manage crate rewards");
+        $sender->sendMessage("- /mc reward => Manage the amount of times crate rewards are received");
     }
 
     protected function prepare(): void
@@ -46,10 +46,10 @@ class MagicCratesCommand extends BaseCommand
         /** @var MagicCrates $plugin */
         $plugin = $this->getOwningPlugin();
 
-        $this->registerSubCommand(new CrateCreateCommand($plugin, "create", "Toggle crate create mode"));
-        $this->registerSubCommand(new CrateRemoveCommand($plugin, "remove", "Toggle crate remove mode"));
-        $this->registerSubCommand(new CrateKeyCommand($plugin, "key", "Give a crate key to a player"));
-        $this->registerSubCommand(new CrateRewardCommand($plugin, "reward", "Manage crate rewards"));
+        $this->registerSubCommand(new CreateCommand($plugin, "create", "Toggle the create mode"));
+        $this->registerSubCommand(new RemoveCommand($plugin, "remove", "Toggle the remove mode"));
+        $this->registerSubCommand(new KeyCommand($plugin, "key", "Give a crate key to a player"));
+        $this->registerSubCommand(new RewardCommand($plugin, "reward", "Manage the amount of times crate rewards are received"));
     }
 
 
