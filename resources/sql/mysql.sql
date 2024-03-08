@@ -51,8 +51,9 @@ SELECT *
 FROM Crates;
 -- #}
 -- #}
+
 -- #{   rewards
--- #{       set
+-- #{       setPlayerRewards
 -- #            :type string
 -- #            :player string
 -- #            :reward string
@@ -61,7 +62,7 @@ INSERT INTO Rewards(type, player, reward, amount)
 VALUES (:type, :player, :reward, :amount)
 ON DUPLICATE KEY UPDATE amount = :amount;
 -- #}
--- #{       get
+-- #{       getPlayerRewards
 -- #            :type string
 -- #            :player string
 SELECT *
@@ -69,20 +70,26 @@ FROM Rewards
 WHERE type = :type
   AND player = :player;
 -- #}
--- #{       getTotal
+-- #{       getRewardTotal
 -- #            :type string
 SELECT reward, SUM(amount) AS total
 FROM Rewards
 WHERE type = :type
 GROUP BY reward;
 -- #}
--- #{       reset
+-- #{       resetCrateRewards
 -- #            :type string
 DELETE
 FROM Rewards
 WHERE type = :type;
 -- #}
--- #{       resetReward
+-- #{       resetPlayerRewards
+-- #            :player string
+DELETE
+FROM Rewards
+WHERE player = :player;
+-- #}
+-- #{       resetCrateReward
 -- #            :type string
 -- #            :reward string
 DELETE
@@ -90,7 +97,7 @@ FROM Rewards
 WHERE type = :type
   AND reward = :reward;
 -- #}
--- #{       resetPlayer
+-- #{       resetPlayerCrateRewards
 -- #            :type string
 -- #            :player string
 DELETE
@@ -98,7 +105,7 @@ FROM Rewards
 WHERE type = :type
   AND player = :player;
 -- #}
--- #{       resetPlayerReward
+-- #{       resetPlayerCrateReward
 -- #            :type string
 -- #            :player string
 -- #            :reward string

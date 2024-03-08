@@ -115,7 +115,7 @@ class DBController
 
 
     /**
-     * Get all crates in a world
+     * Get all crates
      * @return Promise<Crate[]>
      */
     public function getAllCrates(): Promise
@@ -146,7 +146,7 @@ class DBController
     public function getPlayerRewards(CrateType $type, Player $player): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeSelect("data.rewards.get", [
+        $this->database->executeSelect("data.rewards.getPlayerRewards", [
             "type" => $type->getId(),
             "player" => $player->getUniqueId()->toString()
         ], function (array $rows) use ($promiseResolver) {
@@ -174,7 +174,7 @@ class DBController
     public function setPlayerRewards(CrateType $type, Player $player, DynamicCrateReward $reward, int $amount): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.set", [
+        $this->database->executeGeneric("data.rewards.setPlayerRewards", [
             "type" => $type->getId(),
             "player" => $player->getUniqueId()->toString(),
             "reward" => $reward->getId(),
@@ -201,7 +201,7 @@ class DBController
     public function setRawPlayerRewards(string $type, string $player, string $reward, int $amount): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.set", [
+        $this->database->executeGeneric("data.rewards.setPlayerRewards", [
             "type" => $type,
             "player" => $player,
             "reward" => $reward,
@@ -217,14 +217,14 @@ class DBController
     }
 
     /**
-     * Get the total amounts of all rewards of the given type
+     * Get the total number of received rewards by the given type
      * @param CrateType $type
      * @return Promise<array<string, int>>
      */
     public function getRewardTotal(CrateType $type): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeSelect("data.rewards.getTotal", [
+        $this->database->executeSelect("data.rewards.getRewardTotal", [
             "type" => $type->getId()
         ], function (array $rows) use ($promiseResolver) {
             $totals = [];
@@ -247,10 +247,10 @@ class DBController
      * @param CrateType $type
      * @return Promise
      */
-    public function resetRewards(CrateType $type): Promise
+    public function resetCrateRewards(CrateType $type): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.reset", [
+        $this->database->executeGeneric("data.rewards.resetCrateRewards", [
             "type" => $type->getId(),
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);
@@ -268,10 +268,10 @@ class DBController
      * @param DynamicCrateReward $reward
      * @return Promise
      */
-    public function resetReward(CrateType $type, DynamicCrateReward $reward): Promise
+    public function resetCrateReward(CrateType $type, DynamicCrateReward $reward): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.resetReward", [
+        $this->database->executeGeneric("data.rewards.resetCrateReward", [
             "type" => $type->getId(),
             "reward" => $reward->getId()
         ], function () use ($promiseResolver) {
@@ -290,10 +290,10 @@ class DBController
      * @param Player $player
      * @return Promise
      */
-    public function resetPlayerRewards(CrateType $type, Player $player): Promise
+    public function resetPlayerCrateRewards(CrateType $type, Player $player): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.resetPlayer", [
+        $this->database->executeGeneric("data.rewards.resetPlayerCrateRewards", [
             "type" => $type->getId(),
             "player" => $player->getUniqueId()->toString()
         ], function () use ($promiseResolver) {
@@ -313,13 +313,33 @@ class DBController
      * @param DynamicCrateReward $reward
      * @return Promise
      */
-    public function resetPlayerReward(CrateType $type, Player $player, DynamicCrateReward $reward): Promise
+    public function resetPlayerCrateReward(CrateType $type, Player $player, DynamicCrateReward $reward): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.rewards.resetPlayerReward", [
+        $this->database->executeGeneric("data.rewards.resetPlayerCrateReward", [
             "type" => $type->getId(),
             "player" => $player->getUniqueId()->toString(),
             "reward" => $reward->getId()
+        ], function () use ($promiseResolver) {
+            $promiseResolver->resolve(null);
+        }, function (SqlError $error) use ($promiseResolver) {
+            $this->plugin->getLogger()->warning($error->getErrorMessage());
+            $promiseResolver->reject();
+        });
+
+        return $promiseResolver->getPromise();
+    }
+
+    /**
+     * Remove all received rewards from a player
+     * @param Player $player the player to remove the rewards from
+     * @return Promise
+     */
+    public function resetPlayerRewards(Player $player): Promise
+    {
+        $promiseResolver = new PromiseResolver();
+        $this->database->executeGeneric("data.rewards.resetPlayerRewards", [
+            "player" => $player->getUniqueId()->toString()
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);
         }, function (SqlError $error) use ($promiseResolver) {

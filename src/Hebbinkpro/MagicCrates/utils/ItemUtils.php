@@ -51,7 +51,7 @@ class ItemUtils
             try {
                 $item = CustomiesItemFactory::getInstance()->get($identifier);
             } catch (Exception) {
-                // if the item cannot be found by customies it throws an error...
+                // if the item cannot be found by customies, it throws an error...
                 $item = null;
             }
         }
@@ -62,6 +62,7 @@ class ItemUtils
     /**
      * Create a fake item stack with a given network ID which the client can recognize.
      * @param int $networkId
+     * @param int $count
      * @return ItemStack
      */
     public static function getFakeItemStack(int $networkId, int $count = 1): ItemStack
@@ -71,10 +72,7 @@ class ItemUtils
             0,
             $count,
             ItemTranslator::NO_BLOCK_RUNTIME_ID,
-            new CompoundTag(),
-            [],
-            [],
-            null
+            new CompoundTag()
         );
     }
 }

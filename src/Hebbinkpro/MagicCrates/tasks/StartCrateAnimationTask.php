@@ -62,7 +62,7 @@ class StartCrateAnimationTask extends Task
 
         // if there are items and commands, add the commands at the end
         if (sizeof($this->reward->getCommands()) > 0) {
-            // set the spawn delay to the amount of items as size-1 will be used for the last item
+            // set the spawn delay to the number of items as size-1 will be used for the last item
             $this->spawnItem(null, sizeof($this->reward->getItems()));
         }
     }

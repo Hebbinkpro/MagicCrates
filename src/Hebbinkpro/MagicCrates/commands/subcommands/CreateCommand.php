@@ -41,19 +41,19 @@ class CreateCommand extends BaseSubCommand
 
         switch ($action) {
             case CrateAction::REMOVE:
-                $sender->sendMessage(MagicCrates::getPrefix() . " §cCrate remove mode is currently §aenabled§c.");
+                $sender->sendMessage(MagicCrates::getPrefix() . " §cCrate remove mode is currently§a enabled§c.");
                 $sender->sendMessage(MagicCrates::getPrefix() . " §eDisable the crate remove mode using '/mc remove' and try again.");
                 break;
 
             case CrateAction::CREATE:
                 // disable crate creation mode
                 PlayerCrateActions::getInstance()->setAction($sender, CrateAction::NONE);
-                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate creation mode has been §cdisabled.");
+                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate creation mode has been§c disabled.");
                 break;
 
             default:
                 PlayerCrateActions::getInstance()->setAction($sender, CrateAction::CREATE);
-                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate creation mode has been §aenabled§e. Click on a chest to create a crate.");
+                $sender->sendMessage(MagicCrates::getPrefix() . " §eCrate creation mode has been§a enabled§e. Click on a chest to create a crate.");
         }
     }
 

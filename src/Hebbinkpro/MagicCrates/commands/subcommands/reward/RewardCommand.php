@@ -30,7 +30,7 @@ class RewardCommand extends BaseSubCommand
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
-        $sender->sendMessage("- /mc reward set   => Set the amount of times a reward is received by a player");
+        $sender->sendMessage("- /mc reward set   => Set the amount of times a reward is received");
         $sender->sendMessage("- /mc reward reset => Reset the amount of times rewards are received");
     }
 

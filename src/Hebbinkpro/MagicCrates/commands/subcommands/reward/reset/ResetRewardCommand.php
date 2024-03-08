@@ -42,13 +42,13 @@ class ResetRewardCommand extends BaseSubCommand
 
         $reward = $crateType->getRewardById($args["reward_id"] ?? "");
         if (!$reward instanceof DynamicCrateReward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot reset the received amount for a non dynamic reward.");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot reset the received rewards for a non-dynamic reward.");
             return;
         }
 
         // reset the reward from the crate type
-        MagicCrates::getDatabase()->resetReward($crateType, $reward)->onCompletion(function () use ($sender, $crateType, $reward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe received amount of all players that received the reward {$reward->getId()} in crate type {$crateType->getId()} has been reset.");
+        MagicCrates::getDatabase()->resetCrateReward($crateType, $reward)->onCompletion(function () use ($sender, $crateType, $reward) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of times every player received the reward {$reward->getId()} from crate type {$crateType->getId()} has been reset.");
         }, function () use ($sender) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
         });

@@ -35,12 +35,6 @@ class ResetPlayerRewardsCommand extends BaseSubCommand
 
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
-        $crateType = CrateType::getById($args["crate_type"]);
-
-        if ($crateType === null) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type.");
-            return;
-        }
 
         $player = Server::getInstance()->getPlayerExact($args["player"] ?? "");
         if ($player === null) {
@@ -48,26 +42,43 @@ class ResetPlayerRewardsCommand extends BaseSubCommand
             return;
         }
 
-        if (!isset($args["reward_id"])) {
-            // reset all rewards of th player from the given crate type
-            MagicCrates::getDatabase()->resetPlayerRewards($crateType, $player)->onCompletion(function () use ($sender, $crateType, $player) {
-                $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of all received rewards from {$player->getName()} in crate type {$crateType->getId()} have been reset!");
+        if (!isset($args["crate_type"])) {
+            MagicCrates::getDatabase()->resetPlayerRewards($player)
+                ->onCompletion(function () use ($sender, $player) {
+                    $sender->sendMessage(MagicCrates::getPrefix() . " §aAll rewards received by {$player->getName()} have been reset!");
+                }, function () use ($sender) {
+                    $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
+                });
+            return;
+        }
 
-            }, function () use ($sender) {
-                $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
-            });
+        $crateType = CrateType::getById($args["crate_type"]);
+        if ($crateType === null) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cInvalid crate type.");
+            return;
+        }
+
+        if (!isset($args["reward_id"])) {
+            // reset all rewards of the player from the given crate type
+            MagicCrates::getDatabase()->resetPlayerCrateRewards($crateType, $player)
+                ->onCompletion(function () use ($sender, $crateType, $player) {
+                    $sender->sendMessage(MagicCrates::getPrefix() . " §aAll rewards received by {$player->getName()} from crate type {$crateType->getId()} have been reset!");
+
+                }, function () use ($sender) {
+                    $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
+                });
             return;
         }
 
         $reward = $crateType->getRewardById($args["reward_id"]);
         if (!$reward instanceof DynamicCrateReward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot reset the received amount for a non dynamic reward.");
+            $sender->sendMessage(MagicCrates::getPrefix() . " §cYou cannot reset the received rewards for a non-dynamic reward.");
             return;
         }
 
         // reset all rewards of the player from the given reward inside the crate type
-        MagicCrates::getDatabase()->resetPlayerReward($crateType, $player, $reward)->onCompletion(function () use ($sender, $crateType, $player, $reward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of times {$player->getName()} has received reward {$reward->getId()} in crate type {$crateType->getId()} has been reset!");
+        MagicCrates::getDatabase()->resetPlayerCrateReward($crateType, $player, $reward)->onCompletion(function () use ($sender, $crateType, $player, $reward) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of times {$player->getName()} received reward {$reward->getId()} from crate type {$crateType->getId()} has been reset!");
         }, function () use ($sender) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
         });
@@ -80,8 +91,8 @@ class ResetPlayerRewardsCommand extends BaseSubCommand
     {
         $this->setPermission("magiccrates.cmd.reward.reset");
 
-        $this->registerArgument(0, new CrateTypeArgument("crate_type"));
-        $this->registerArgument(1, new TargetPlayerArgument(false, "player"));
+        $this->registerArgument(0, new TargetPlayerArgument(false, "player"));
+        $this->registerArgument(1, new CrateTypeArgument("crate_type", true));
         $this->registerArgument(2, new RawStringArgument("reward_id", true));
     }
 }

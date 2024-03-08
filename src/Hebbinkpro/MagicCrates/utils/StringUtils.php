@@ -21,9 +21,6 @@ namespace Hebbinkpro\MagicCrates\utils;
 
 class StringUtils
 {
-    public const PARAM_OPEN = "{";
-    public const PARAM_CLOSE = "}";
-
     /**
      * Replace all params inside the string with values of the given params
      * @param string $str the string with parameters
@@ -33,7 +30,7 @@ class StringUtils
     public static function prepare(string $str, array $params): string
     {
         foreach ($params as $name => $v) {
-            $param = self::PARAM_OPEN . $name . self::PARAM_CLOSE;
+            $param = "{" . $name . "}";
             $str = str_replace($param, $v, $str);
         }
 

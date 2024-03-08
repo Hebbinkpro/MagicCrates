@@ -1,6 +1,7 @@
 # MagicCrates [![](https://poggit.pmmp.io/shield.downloads/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
 Add customizable crates to your server.
+
 - Add as many crate types as you want
 - Item and command rewards
 - Open crates with a nice animation
@@ -20,15 +21,17 @@ Add customizable crates to your server.
 
 Command aliases: `/magiccrates`, `/mc`
 
-| Command                                                           | Description                            | Permission-             |
-|-------------------------------------------------------------------|----------------------------------------|-------------------------|
-| `/magiccrates`                                                    | MagicCrates Command                    | magiccrates.cmd         |
-| `/magiccrates create`                                             | Create a crate                         | magiccrates.cmd.create  |
-| `/magiccrates remove`                                             | Remove a crate                         | magiccrates.cmd.remove  |
-| `/magiccrates key <crate_type> [amount] [player]`                 | Give a crate key to a player           | magiccrates.cmd.key     |
-| `/magiccrates key all <crate_type> [amount]`                      | Give a crate key to all online players | magiccrates.cmd.key.all |
-| `/magiccrates reward set <crate_type> <player> <reward> <amount>` |                                        |                         |
-| `/magiccrates reward reset <crate_type> [reward]`                 |                                        |                         |
+| Command                                                           | Description                                                      | Permission-                  |
+|-------------------------------------------------------------------|------------------------------------------------------------------|------------------------------|
+| `/magiccrates`                                                    | MagicCrates Command                                              | magiccrates.cmd              |
+| `/magiccrates create`                                             | Toggle crate Create mode                                         | magiccrates.cmd.create       |
+| `/magiccrates remove`                                             | Toggle crate Remove mode                                         | magiccrates.cmd.remove       |
+| `/magiccrates key <crate_type> [amount] [player]`                 | Give a crate key to a player                                     | magiccrates.cmd.key          |
+| `/magiccrates key all <crate_type> [amount]`                      | Give a crate key to all online players                           | magiccrates.cmd.key.all      |
+| `/magiccrates reward set <crate_type> <player> <reward> <amount>` | Set the amount of times a reward is received                     | magiccrates.cmd.reward.set   |
+| `/magiccrates reward reset crate <crate_type>`                    | Reset the amount of times all rewards in the crate are received  | magiccrates.cmd.reward.reset |
+| `/magiccrates reward reset reward <crate_type> <reward>`          | Reset the amount of times the reward is received in a crate type | magiccrates.cmd.reward.reset |
+| `/magiccrates reward reset player <crate_type> <player> [reward]` | Reset the amount of times a player has received rewards          | magiccrates.cmd.reward.reset |
 
 ### Create a new crate
 
@@ -59,30 +62,32 @@ When you have a crate key, you can open the matching crate by clicking on the cr
 ### Crates
 
 All crates from the same Crate Type have the exact same content,
-and when opening a crate of a certain type a random reward will be given to the player.
+and when opening a crate of a certain type, a random reward will be given to the player.
 
 #### Crate Types
 
-You can customize or add your own crates in [crate_types.json](#crate_typesjson).
+You can customize or add your own crates in [crate_types.json](#crate-types).
 
 #### Crate Rewards
 
-In a crate type, you can specify multiple rewards, but not every reward will behave the same.<br>
+In a crate type, you can specify multiple rewards. However, not every reward will behave the same.<br>
 Normal rewards have a static amount of them in the crate which results in a fixed probability of getting the item.<br>
 However, you can also create **Dynamic** rewards.
-The probability and amount of getting these rewards depends on the amount of times the reward has been received by the
+The probability and amount of getting these rewards depends on the amount
+of times the reward has been received by the
 player or all players.<br>
-Crate rewards have to be added in [crate_types.json](#crate_typesjson), and there you can find more information about
+Crate rewards have to be added in [crate_types.json](#crate-types), and there you can find more information about
 creating the rewards.
 
 ## Config
 
-- `delay` The delay in ticks before the crate opening animation starts
+- `delay` The delay in ticks before the crate-opening animation starts
 - `prefix`   - The prefix in front of all messages the plugin sends
 - `key-name` - The name format used for all the crate keys
-- `save-data-ticks` - The amount of ticks after which all data (crates and rewarded players) gets stored
+- `save-data-ticks` - The number of ticks after which all data (crates and rewarded players) gets stored
 
 ### Default values
+
 ```yml
 delay: 20
 prefix: "§r[§6Magic§cCrates§r]"
@@ -146,9 +151,10 @@ the plugin will notify you in the server console on startup indicating what went
 ### Crate Types
 
 The basic structure in `crate_types.json` is defined like the following:
+
 ```json5
 {
-  "<type_id>": CrateType,
+  "<type_id>": "CrateType",
   ...
 }
 ```
@@ -156,21 +162,22 @@ The basic structure in `crate_types.json` is defined like the following:
 You can add as many crate types (`<type_id>: CrateType`) to this file as you need, but every `CrateType` needs an ID!
 
 ### Crate Type
+
 ```json5
 {
   // the name shown above the crate
-  "name": string,
+  "name": "string",
   // the crate rewards
-  "rewards": CrateReward[],
-//  commands executed after a player opened the crate
-"commands": Command[],
-// [optional] a reward or reward id that should be used as the replacement reward
-"replacement": CrateReward|string
+  "rewards": "CrateReward[]",
+  //  commands executed after a player opened the crate
+  "commands": "Command[]",
+  // [optional] a reward or reward id that should be used as the replacement reward
+  "replacement": "CrateReward|string"
 }
 ```
 
 The replacement defined in the `CrateType` is used as a global replacer for all `DynamicCrateReward`'s (unless there is
-an replacement specified in the `DynamicCrateReward`).
+a replacement specified in the `DynamicCrateReward`).
 
 #### Registration of Crate Rewards
 
@@ -181,20 +188,24 @@ v4.0.0 releases.
 
 **Recommended:**
 
-```json lines
-"rewards": {
-"<reward_id>": CrateReward,
-...
+```json5
+{
+  "rewards": {
+    "<reward_id>": "CrateReward",
+    ...
+  }
 }
 ```
 
 **Deprecated:** (will be removed in v4.0.0)
 
-```json lines
-"rewards": [
-CrateReward,
-...
-]
+```json5
+{
+  "rewards": [
+    "CrateReward",
+    ...
+  ]
+}
 ```
 
 #### Command
@@ -206,15 +217,18 @@ parameters in the command.
 
 to use the parameter, include `{<parameter>}` in the string.
 
-- player - The name of the player that opened the crate
-- crate - The name of the crate type that was opened
-- crate_id - The ID of the crate type that was opened
-- reward - The name of the reward the player received
-- reward_id - The id of the reward the player received
+| parameter | description                                  |
+|-----------|----------------------------------------------| 
+| player    | The name of the player that opened the crate |
+| crate     | The name of the crate type that was opened   |
+| crate_id  | The ID of the crate type that was opened     |
+| reward    | The name of the reward the player received   |
+| reward_id | The id of the reward the player received     |
 
 A Command will look something like this: `"say {player} received {reward} from a {crate}"`.<br>
-Executing this command will result in `say Hebbinkpro received Unique Diamond from a Rare Crate` when Hebbinkpro opened
-a Rare Crate and won a Unique Diamond.
+Executing this command will result
+in `say Hebbinkpro received Unique Diamond from a Rare Crate` when `Hebbinkpro` opened
+a `Rare Crate` and won a `Unique Diamond`.
 
 ### Crate Reward
 
@@ -223,43 +237,44 @@ This is the data structure of a `CrateReward`
 ```json5
 {
   // name of the reward
-  "name": string,
+  "name": "string",
   // amount of this reward inside the crate.
-  "amount": int,
+  "amount": "int",
   // the item(s) the player gets
-  "items": Item[],
-// commands executed when the player wins this reward
-"commands": string[],
-// [optional] path/url to an image that will be displayed in the crate UI
-"icon": string
+  "items": "Item[]",
+  // commands executed when the player wins this reward
+  "commands": "string[]",
+  // [optional] path/url to an image that will be displayed in the crate UI
+  "icon": "string"
 }
 ```
 
 At least one item or command should be given
 
 This is the data structure of a `DynamicCrateReward`
+
 ```json5
 {
   // name of the reward
-  "name": string,
+  "name": "string",
   // [optional] amount of this reward inside the crate.
-  "amount": int,
+  "amount": "int",
   // [optional] maximum amount of this reward the player can get
-  "player_max": int,
+  "player_max": "int",
   // [optional] maximum amount of this reward that can be awarded server wide
-  "global_max": int,
+  "global_max": "int",
   // [optional] amount of the replacement reward inside the crate
-  "replace_amount": int,
+  "replace_amount": "int",
   // [optional] if the reward should be replaced by a replacment reward when the maximum is reached
-  "replace": bool,
+  "replace": "bool",
   // the item(s) the player gets
-  "items": Item[],
-// commands executed when the player wins this reward
-"commands": string[],
-// [optional] path/url to an image that will be displayed in the crate UI
-"icon": string,
-// [optional] a reward or reward id that should be used as the replacement reward
-"replacement": CrateReward|string
+  "items": "Item[]",
+  // commands executed when the player wins this reward
+  "commands": "string[]",
+  // [optional] path/url to an image that will be displayed in the crate UI
+  "icon": "string",
+  // [optional] a reward or reward id that should be used as the replacement reward
+  "replacement": "CrateReward|string"
 }
 ```
 
@@ -292,17 +307,15 @@ Items registered using Customies are also supported, but make sure you identify 
 ```json5
 {
   // id of the item (e.g. minecraft:dirt or customies:example)
-  "id": string,
+  "id": "string",
   // [optional] custom name of the item
-  "name": string,
+  "name": "string",
   // [optional] amount of the item the player will receive
-  "amount": int,
+  "amount": "int",
   // [optional] add one or more lines of lore to the item
-  "lore": string
-  |
-  string[],
-// [optional] list of enchantments applied to the item
-"enchantments": Enchantment[]
+  "lore": "string | string[]",
+  // [optional] list of enchantments applied to the item
+  "enchantments": "Enchantment[]"
 }
 ```
 
@@ -313,9 +326,9 @@ This is the data structure of an `Enchantment` inside an `Item`
 ```json5
 {
   // name of the enchantment
-  "name": string,
+  "name": "string",
   // level of the enchantment
-  "level": int
+  "level": "int"
 }
 ```
 
@@ -324,6 +337,7 @@ _**Note:** The enchantment name should be registered in PMMP, otherwise the crat
 ### Example Crate Types
 
 #### Common Crate
+
 ```json
 {
   "common": {

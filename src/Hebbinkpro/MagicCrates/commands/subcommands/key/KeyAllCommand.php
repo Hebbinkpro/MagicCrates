@@ -38,7 +38,7 @@ class KeyAllCommand extends BaseSubCommand
             return;
         }
 
-        // get the amount of keys
+        // get the number of keys
         $amount = $args["amount"] ?? 1;
 
         // negative or zero amount is given

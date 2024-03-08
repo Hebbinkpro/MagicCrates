@@ -135,7 +135,7 @@ class MagicCrates extends PluginBase
         // load all the crates
         $this->loadCrates();
 
-        $this->getServer()->getPluginManager()->registerEvents(new EventListener(), $this);
+        $this->getServer()->getPluginManager()->registerEvents(new EventListener($this), $this);
 
         $this->getServer()->getCommandMap()->register("magiccrates", new MagicCratesCommand($this, "magiccrates", "Magic crates command", ["mc"]));
     }
@@ -217,7 +217,7 @@ class MagicCrates extends PluginBase
 
     public function onDisable(): void
     {
-        // let all crate reward entities despawn
+        // let all crate reward entities de-spawn
         foreach ($this->getServer()->getWorldManager()->getWorlds() as $world) {
             foreach ($world->getEntities() as $entity) {
                 if ($entity instanceof CrateRewardItemEntity) $entity->flagForDespawn();

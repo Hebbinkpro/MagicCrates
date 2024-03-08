@@ -105,7 +105,7 @@ class CrateItemEntity extends Entity
     }
 
     /**
-     * Get the sound that plays when the crate item despawns
+     * Get the sound that plays when the crate item de-spawns
      * @return Sound
      */
     public function getRevealSound(): Sound

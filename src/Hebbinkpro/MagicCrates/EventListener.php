@@ -39,11 +39,16 @@ use pocketmine\player\Player;
 
 class EventListener implements Listener
 {
+
+    public function __construct(private MagicCrates $plugin)
+    {
+    }
+
     public function onInteractChest(PlayerInteractEvent $e): void
     {
         $block = $e->getBlock();
 
-        // when block isn't a chest or when it's not a right click interaction return
+        // when a block isn't a chest or when, it's not a right click interaction return
         if (!$block instanceof Chest || $e->getAction() != PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
 
         $pos = $block->getPosition();
@@ -74,6 +79,38 @@ class EventListener implements Listener
         $e->cancel();
     }
 
+    private function openCrate(Player $player, Crate $crate, Item $item): void
+    {
+        if ($crate->isOpen()) {
+            $playerName = $crate->getOpener()->getName();
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou have to wait, §e$playerName §r§cis now opening the crate");
+            return;
+        }
+
+        $type = $crate->getType();
+
+        if (!$type->isValidKey($item)) {
+            if (($typeId = $item->getNamedTag()->getString(CrateType::KEY_NBT_TAG, "")) !== "") {
+                // the player interacted with an item with the key nbt tag
+                if (($expectedCrate = CrateType::getById($typeId)) !== null) {
+                    // there exists a crate type with the typeId
+                    $player->sendMessage(MagicCrates::getPrefix() . " §cYou can only open a {$expectedCrate->getName()}§r§c crate with this key.");
+                    return;
+                }
+            }
+
+            // check if crate info is enabled
+            if ($this->plugin->getConfig()->get("show-crate-info")) {
+                // send the crate preview form
+                $showRewardInfo = $this->plugin->getConfig()->get("show-reward-info");
+                CrateForm::sendPreviewForm($player, $crate, $showRewardInfo);
+            }
+            return;
+        }
+
+        $crate->openWithKey($player, $item);
+    }
+
     private function handleCrateAction(Player $player, Block $block): void
     {
         $action = PlayerCrateActions::getInstance()->getAction($player);
@@ -100,7 +137,7 @@ class EventListener implements Listener
                     return;
                 }
 
-                // check if player is creating a crate
+                // check if a player is creating a crate
                 if ($crate !== null) {
                     $player->sendMessage(MagicCrates::getPrefix() . " §cThere is already a crate at this position.");
                     return;
@@ -128,41 +165,13 @@ class EventListener implements Listener
 
     }
 
-    private function openCrate(Player $player, Crate $crate, Item $item): void
-    {
-        if ($crate->isOpen()) {
-            $playerName = $crate->getOpener()->getName();
-            $player->sendMessage(MagicCrates::getPrefix() . " §cYou have to wait, §e$playerName §r§cis now opening the crate");
-            return;
-        }
-
-        $type = $crate->getType();
-
-        if (!$type->isValidKey($item)) {
-            if (($typeId = $item->getNamedTag()->getString(CrateType::KEY_NBT_TAG)) !== null) {
-                // the player interacted with an item with the key nbt tag
-                if (($expectedCrate = CrateType::getById($typeId)) !== null) {
-                    // there is a crate type with the id in the tag
-                    $player->sendMessage(MagicCrates::getPrefix() . " §cYou can only open a {$expectedCrate->getName()}§r§c crate with this key.");
-                    return;
-                }
-            }
-
-            // send the crate preview form
-            CrateForm::sendPreviewForm($player, $crate);
-            return;
-        }
-
-        $crate->openWithKey($player, $item);
-    }
-
     public function onBlockPlace(BlockPlaceEvent $e): void
     {
         $player = $e->getPlayer();
         $playerAction = PlayerCrateActions::getInstance()->getAction($player);
 
         if ($playerAction !== CrateAction::NONE) {
-            $player->sendMessage(MagicCrates::getPrefix() . " §cYou cannot place blocks while in crate creation or remove mode.");
+            $player->sendMessage(MagicCrates::getPrefix() . " §cYou cannot place blocks while in crate create or remove mode.");
             $e->cancel();
         }
     }

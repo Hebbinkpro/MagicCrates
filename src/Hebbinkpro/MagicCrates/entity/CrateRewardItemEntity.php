@@ -34,7 +34,7 @@ class CrateRewardItemEntity extends CrateItemEntity
     public function entityBaseTick(int $tickDiff = 1): bool
     {
         $hasUpdate = parent::entityBaseTick($tickDiff);
-        // if the destination is reached make the name tag visible
+        // if the destination is reached, make the name tag visible
         if ($this->reachedDest) {
             if (!$this->isNameTagVisible()) $this->setNameTagVisible();
         }

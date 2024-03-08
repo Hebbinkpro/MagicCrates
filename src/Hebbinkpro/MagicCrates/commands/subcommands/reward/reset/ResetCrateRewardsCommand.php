@@ -39,8 +39,8 @@ class ResetCrateRewardsCommand extends BaseSubCommand
         }
 
         // reset all rewards of the given crate type
-        MagicCrates::getDatabase()->resetRewards($crateType)->onCompletion(function () use ($sender, $crateType) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §aThe amount of all received rewards in crate type {$crateType->getId()} have been reset for all players.");
+        MagicCrates::getDatabase()->resetCrateRewards($crateType)->onCompletion(function () use ($sender, $crateType) {
+            $sender->sendMessage(MagicCrates::getPrefix() . " §aAll received rewards from crate type {$crateType->getId()} have been reset.");
         }, function () use ($sender) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
         });

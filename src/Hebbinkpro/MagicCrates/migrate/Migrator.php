@@ -86,7 +86,7 @@ class Migrator
 
         }
 
-        // remove the crates file
+        // remove the crates.json file
         unlink($file);
 
         if ($invalid == 0) {

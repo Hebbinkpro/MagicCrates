@@ -13,6 +13,13 @@ key:
   # The name for a crate key
   name: §r[§6Crate §cKey§r] §e{crate}
 
+# form settings
+form:
+  # if the player is able to see the contents of a crate when interacting with the crate without a key
+  show-crate-info: true
+  # if the player is able to see all the details of a reward when clicking on a reward in the crate info
+  show-reward-info: true
+
 database:
   # The database type. "sqlite" and "mysql" are supported.
   type: sqlite
