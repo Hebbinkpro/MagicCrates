@@ -68,7 +68,8 @@ FROM Crates;
 -- #            :reward string
 -- #            :amount int
 INSERT OR
-REPLACE INTO Rewards(type, player, reward, amount)
+REPLACE
+INTO Rewards(type, player, reward, amount)
 VALUES (:type, :player, :reward, :amount);
 -- #}
 -- #{       getPlayerRewards

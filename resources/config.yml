@@ -10,10 +10,15 @@ prefix: §r[§6Magic§cCrates§r]
 key:
   # The item used for the crate key
   id: minecraft:paper
-  # The name for a crate key
+  # The custom name for the item
   name: §r[§6Crate §cKey§r] §e{crate}
-  # the lore of the crate key
-  lore: §r[§6Magic§cCrates§r]
+  # the lore of the item
+  lore:
+    - §r[§6Magic§cCrates§r]
+  # enchantments of the item
+  enchantments:
+    - name: unbreaking
+      level: 1
 
 # if the player is able to see the contents of a crate when interacting with the crate without a key
 show-crate-info: true

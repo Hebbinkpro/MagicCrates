@@ -83,32 +83,71 @@ creating the rewards.
 
 ## Config
 
-- `delay` The delay in ticks before the crate-opening animation starts
-- `prefix`   - The prefix in front of all messages the plugin sends
-- `key-name` - The name format used for all the crate keys
-- `save-data-ticks` - The number of ticks after which all data (crates and rewarded players) gets stored
+- `version` - [DO NOT TOUCH] The version of the config file
+- `delay` - The delay in ticks before the crate-opening animation starts
+- `prefix` - The prefix in front of all messages the plugin sends
+- `key` - The item that should be used for the key.
+- `show-crate-info` - If players are able to see the contents of a crate, when clicking on a crate without a key
+- `show-reward-info` - If players are able to see the detailed information of a crate reward, when clicking on a reward
+  in the crate info form.
+- `database` - Settings for the libasynql database
+
+### Key
+
+The key follows the same structure as the [crate reward items](#item).<br>
+The only difference is that the `name` of the item supports some parameters to distinguish keys for different crate
+types
+
+- `prefix` - The prefix defined in `prefix` in the config.yml
+- `crate` - The name of the crate type
+- `crate_id` - The ID of the crate type
+  Further information about parameters can be found [here](#command-parameters).
 
 ### Default values
 
 ```yml
+version: 1
 delay: 20
-prefix: "§r[§6Magic§cCrates§r]"
-key-name: "§r[§6Crate §cKey§r] §e{crate}"
-save-data-ticks: 6000
+prefix: §r[§6Magic§cCrates§r]
+
+key:
+  id: minecraft:paper
+  name: §r[§6Crate §cKey§r] §e{crate}
+  lore:
+    - §r[§6Magic§cCrates§r]
+  enchantments:
+    - name: unbreaking
+      level: 1
+
+show-crate-info: true
+show-reward-info: true
+
+database:
+  type: sqlite
+  sqlite:
+    file: data.sqlite
+  mysql:
+    host: 127.0.0.1
+    username: root
+    password: ""
+    schema: your_schema
+  worker-limit: 1
 ```
-
-## Data
-
-All data of the plugin is (currently) stored in JSON files, but only the following file is safe to edit:
-
-- `crate_types.json` - Stores all your crate types
-  It is not recommended to touch the other JSON files, as this can break the plugin:
-- `crates.json` - Stores all crates you have created on your server with their position, world and crate type
-- `rewarded_players.json` - Stores the amount of dynamic rewards a player has received
 
 ## Changelogs
 
-List of most changes in the new version (v3.0.0)
+List of the most important changes in v3.x
+
+### v3.1.0
+
+- \+ Implemented a database using libasynql
+- \+ Moved the contents of the JSON files `crates.json` and `rewarded_players.json` to the database tables Crates and
+  Rewards respectively
+- \+ Added a `Migrator` to migrate all old JSON files to the database
+- \+ Added support to recover rewards when a player's inventory is full or the player logged out before the end of the
+  animation using unreceived rewards.
+
+### v3.0.0
 
 - \+ Added reward id's
 - \+ Added dynamic rewards
@@ -221,6 +260,7 @@ to use the parameter, include `{<parameter>}` in the string.
 
 | parameter | description                                  |
 |-----------|----------------------------------------------| 
+| prefix    | The prefix defined in the `config.yml`       |
 | player    | The name of the player that opened the crate |
 | crate     | The name of the crate type that was opened   |
 | crate_id  | The ID of the crate type that was opened     |
@@ -317,7 +357,7 @@ Items registered using Customies are also supported, but make sure you identify 
   // [optional] add one or more lines of lore to the item
   "lore": "string | string[]",
   // [optional] list of enchantments applied to the item
-  "enchantments": "Enchantment[]"
+  "enchantments": "Enchantment | Enchantment[]"
 }
 ```
 

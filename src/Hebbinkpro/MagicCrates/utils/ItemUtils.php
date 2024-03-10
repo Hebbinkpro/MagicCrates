@@ -37,31 +37,6 @@ class ItemUtils
     public const COMMAND_BLOCK_NETWORK_ID = 137;
 
     /**
-     * Get an item from the given identifier.
-     *
-     * If the item is registered by Customies, this item will be used.
-     * @param string $identifier
-     * @return Item|null
-     */
-    public static function getItemFromId(string $identifier): ?Item
-    {
-        $item = StringToItemParser::getInstance()->parse($identifier);
-
-        // the item is not registered by pmmp, but customies is enabled
-        if ($item === null && class_exists(CustomiesItemFactory::class)) {
-            // try to get the item from customies
-            try {
-                $item = CustomiesItemFactory::getInstance()->get($identifier);
-            } catch (Exception) {
-                // if the item cannot be found by customies, it throws an error...
-                $item = null;
-            }
-        }
-
-        return $item;
-    }
-
-    /**
      * Create a fake item stack with a given network ID which the client can recognize.
      * @param int $networkId
      * @param int $count
@@ -129,6 +104,31 @@ class ItemUtils
                     }
                     $item->addEnchantment($enchantment);
                 }
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * Get an item from the given identifier.
+     *
+     * If the item is registered by Customies, this item will be used.
+     * @param string $identifier
+     * @return Item|null
+     */
+    public static function getItemFromId(string $identifier): ?Item
+    {
+        $item = StringToItemParser::getInstance()->parse($identifier);
+
+        // the item is not registered by pmmp, but customies is enabled
+        if ($item === null && class_exists(CustomiesItemFactory::class)) {
+            // try to get the item from customies
+            try {
+                $item = CustomiesItemFactory::getInstance()->get($identifier);
+            } catch (Exception) {
+                // if the item cannot be found by customies, it throws an error...
+                $item = null;
             }
         }
 

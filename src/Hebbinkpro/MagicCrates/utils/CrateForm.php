@@ -212,6 +212,57 @@ class CrateForm
     }
 
     /**
+     * Sends a crate reward preview form with some extra details about the crate reward
+     * @param Player $player
+     * @param CrateType $type
+     * @param CrateReward $reward
+     * @param int $playerRewarded
+     * @param int $totalRewards
+     * @return void
+     */
+    private static function sendCrateRewardPreviewForm(Player $player, CrateType $type, CrateReward $reward, int $playerRewarded = -1, int $totalRewards = 0): void
+    {
+        $form = new SimpleForm(function (Player $player, mixed $data) {
+            if ($data === "back") {
+                if (($form = self::$previousForm[$player->getUniqueId()->getBytes()] ?? null) !== null) {
+                    $player->sendForm($form);
+                    return;
+                }
+            }
+            unset (self::$previousForm[$player->getUniqueId()->getBytes()]);
+        });
+
+        $amount = $reward->getAmount();
+
+        // set the form title
+        $form->setTitle("Reward: " . $reward->getName());
+
+
+        $content = "Reward: " . $reward->getName() . "§r\n";
+        $content .= "Crate: " . $type->getName() . "§r\n";
+
+        if ($totalRewards > 0) {
+            $content .= "Amount: " . $amount . "\n";
+            $content .= "Probability: " . (round(($amount / $totalRewards) * 100, 1)) . "%%\n";
+        }
+
+        $items = array_map(fn(Item $i) => $i->getCount() . "x " . $i->getName() . "§r", $reward->getItems());
+        $content .= sizeof($items) == 0 ? "" : ("Items: \n - " . implode("\n - ", $items) . "\n");
+        $content .= sizeof($reward->getCommands()) == 0 ? "" : ("Commands: " . sizeof($reward->getCommands()) . "\n");
+
+        if ($playerRewarded > -1) {
+            $realReward = $type->getRewardById($reward->getId());
+            $content .= ($realReward instanceof DynamicCrateReward ? "Times received: $playerRewarded / {$realReward->getPlayerMaxAmount()} \n" : "");
+        }
+
+        $form->setContent($content);
+
+        $form->addButton("§c<- Back", -1, "", "back");
+
+        $player->sendForm($form);
+    }
+
+    /**
      * @param Player $player
      * @param bool $showRewardInfo
      * @return void
@@ -264,56 +315,5 @@ class CrateForm
         }, function () use ($player) {
             $player->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong");
         });
-    }
-
-    /**
-     * Sends a crate reward preview form with some extra details about the crate reward
-     * @param Player $player
-     * @param CrateType $type
-     * @param CrateReward $reward
-     * @param int $playerRewarded
-     * @param int $totalRewards
-     * @return void
-     */
-    private static function sendCrateRewardPreviewForm(Player $player, CrateType $type, CrateReward $reward, int $playerRewarded = -1, int $totalRewards = 0): void
-    {
-        $form = new SimpleForm(function (Player $player, mixed $data) {
-            if ($data === "back") {
-                if (($form = self::$previousForm[$player->getUniqueId()->getBytes()] ?? null) !== null) {
-                    $player->sendForm($form);
-                    return;
-                }
-            }
-            unset (self::$previousForm[$player->getUniqueId()->getBytes()]);
-        });
-
-        $amount = $reward->getAmount();
-
-        // set the form title
-        $form->setTitle("Reward: " . $reward->getName());
-
-
-        $content = "Reward: " . $reward->getName() . "§r\n";
-        $content .= "Crate: " . $type->getName() . "§r\n";
-
-        if ($totalRewards > 0) {
-            $content .= "Amount: " . $amount . "\n";
-            $content .= "Probability: " . (round(($amount / $totalRewards) * 100, 1)) . "%%\n";
-        }
-
-        $items = array_map(fn(Item $i) => $i->getCount() . "x " . $i->getName() . "§r", $reward->getItems());
-        $content .= sizeof($items) == 0 ? "" : ("Items: \n - " . implode("\n - ", $items) . "\n");
-        $content .= sizeof($reward->getCommands()) == 0 ? "" : ("Commands: " . sizeof($reward->getCommands()) . "\n");
-
-        if ($playerRewarded > -1) {
-            $realReward = $type->getRewardById($reward->getId());
-            $content .= ($realReward instanceof DynamicCrateReward ? "Times received: $playerRewarded / {$realReward->getPlayerMaxAmount()} \n" : "");
-        }
-
-        $form->setContent($content);
-
-        $form->addButton("§c<- Back", -1, "", "back");
-
-        $player->sendForm($form);
     }
 }
