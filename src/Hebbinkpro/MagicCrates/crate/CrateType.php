@@ -259,18 +259,15 @@ class CrateType
      * Reward a player with the given reward
      * @param Player $player the player that will receive the reward
      * @param CrateReward $reward the reward given to the player
-     * @param int $playerRewarded amount of times the reward is rewarded to the player
+     * @param int $playerReceived amount of times the reward is received by the player
      * @return void
      */
-    public function updatePlayerRewards(Player $player, CrateReward $reward, int $playerRewarded): void
+    public function updatePlayerRewards(Player $player, CrateReward $reward, int $playerReceived): void
     {
         // get the reward with the same id from the type
         $realReward = $this->rewards[$reward->getId()] ?? null;
-        // if it is a dynamic reward
-        if ($realReward instanceof DynamicCrateReward) {
-            // set the player reward in the db
-            MagicCrates::getDatabase()->setPlayerRewards($this, $player, $realReward, $playerRewarded + 1);
-        }
+        // set the new amount
+        MagicCrates::getDatabase()->setPlayerRewards($this, $player, $realReward, $playerReceived + 1);
     }
 
     /**
@@ -316,7 +313,7 @@ class CrateType
     public function getRandomReward(Player $player, callable $callback): void
     {
         // get all the player rewards
-        $this->getPlayerRewards($player, function (array $rewards, array $playerRewarded) use ($callback) {
+        $this->getPlayerRewards($player, function (array $rewards, array $playerReceived) use ($callback) {
             $dist = [];
             foreach ($rewards as $i => $reward) {
                 // add amount times the index of the reward to the distribution
@@ -327,7 +324,7 @@ class CrateType
             $rewardId = $dist[array_rand($dist)];
 
             $reward = $rewards[$rewardId];
-            $rewarded = $playerRewarded[$rewardId] ?? 0;
+            $rewarded = $playerReceived[$rewardId] ?? 0;
 
 
             // run the callback with the random reward
@@ -348,10 +345,10 @@ class CrateType
         MagicCrates::getDatabase()->getRewardTotal($this)
             ->onCompletion(function (array $totalRewards) use ($player, $callback) {
                 MagicCrates::getDatabase()->getPlayerRewards($this, $player)
-                    ->onCompletion(function (array $playerRewarded) use ($player, $callback, $totalRewards) {
-                        [$rewards, $totalAmount] = $this->determinePlayerRewards($totalRewards, $playerRewarded);
+                    ->onCompletion(function (array $playerReceived) use ($player, $callback, $totalRewards) {
+                        [$rewards, $totalAmount] = $this->determinePlayerRewards($totalRewards, $playerReceived);
 
-                        call_user_func($callback, $rewards, $playerRewarded, $totalAmount);
+                        call_user_func($callback, $rewards, $playerReceived, $totalAmount);
                     }, function () use ($callback) {
                         call_user_func($callback, [], [], 0);
                     });
@@ -364,10 +361,10 @@ class CrateType
     /**
      * Get the rewards the player can get
      * @param array $rewardTotals the rewards the player can get
-     * @param array $playerRewarded the amount of times the player has received the rewards
+     * @param array $playerReceived the amount of times the player has received the rewards
      * @return array{array<string, CrateReward>, array<string, int>}
      */
-    protected function determinePlayerRewards(array $rewardTotals, array $playerRewarded): array
+    protected function determinePlayerRewards(array $rewardTotals, array $playerReceived): array
     {
         /** @var array<string, CrateReward> $rewards */
         $rewards = [];
@@ -378,7 +375,7 @@ class CrateType
             // dynamic reward
             if ($reward instanceof DynamicCrateReward) {
                 // get the player and reward totals
-                $playerTotal = $playerRewarded[$reward->getId()] ?? 0;
+                $playerTotal = $playerReceived[$reward->getId()] ?? 0;
                 $rewardTotal = $rewardTotals[$reward->getId()] ?? 0;
 
                 // get the amounts for the reward and replacement reward

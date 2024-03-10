@@ -265,9 +265,9 @@ class Crate
     public function open(Player $player): void
     {
         // get the random reward and execute the opening after the reward is fetched
-        $this->type->getRandomReward($player, function (CrateReward $reward, int $playerRewarded) use ($player) {
+        $this->type->getRandomReward($player, function (CrateReward $reward, int $playerReceived) use ($player) {
             // reward the player
-            $this->type->updatePlayerRewards($player, $reward, $playerRewarded);
+            $this->type->updatePlayerRewards($player, $reward, $playerReceived);
 
             // send the reward message
             $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");

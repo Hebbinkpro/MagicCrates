@@ -26,7 +26,6 @@ use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\exception\ArgumentOrderException;
 use Hebbinkpro\MagicCrates\commands\args\CrateTypeArgument;
 use Hebbinkpro\MagicCrates\crate\CrateType;
-use Hebbinkpro\MagicCrates\crate\DynamicCrateReward;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\command\CommandSender;
 use pocketmine\Server;
@@ -51,11 +50,6 @@ class RewardSetCommand extends BaseSubCommand
         $reward = $crateType->getRewardById($args["reward_id"]);
         if ($reward === null) {
             $sender->sendMessage(MagicCrates::getPrefix() . " §cThe reward {$args["reward_id"]} does not exist.");
-            return;
-        }
-
-        if (!$reward instanceof DynamicCrateReward) {
-            $sender->sendMessage(MagicCrates::getPrefix() . " §cA non dynamic reward cannot be received by a player.");
             return;
         }
 

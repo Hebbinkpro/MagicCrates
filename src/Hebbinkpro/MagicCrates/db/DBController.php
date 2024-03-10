@@ -169,11 +169,11 @@ class DBController
      * Set the amount of rewards the player has received
      * @param CrateType $type
      * @param Player $player
-     * @param DynamicCrateReward $reward
+     * @param CrateReward $reward
      * @param int $amount
      * @return Promise
      */
-    public function setPlayerRewards(CrateType $type, Player $player, DynamicCrateReward $reward, int $amount): Promise
+    public function setPlayerRewards(CrateType $type, Player $player, CrateReward $reward, int $amount): Promise
     {
         $promiseResolver = new PromiseResolver();
         $this->database->executeGeneric("data.rewards.setPlayerRewards", [
