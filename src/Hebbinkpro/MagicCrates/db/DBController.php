@@ -20,6 +20,7 @@
 namespace Hebbinkpro\MagicCrates\db;
 
 use Hebbinkpro\MagicCrates\crate\Crate;
+use Hebbinkpro\MagicCrates\crate\CrateReward;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\crate\DynamicCrateReward;
 use pocketmine\player\Player;
@@ -53,6 +54,7 @@ class DBController
     {
         $this->database->executeGeneric("table.crates");
         $this->database->executeGeneric("table.rewards");
+        $this->database->executeGeneric("table.receivedRewards");
     }
 
     /**
@@ -148,7 +150,7 @@ class DBController
         $promiseResolver = new PromiseResolver();
         $this->database->executeSelect("data.rewards.getPlayerRewards", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString()
+            "player" => $player->getUniqueId()->getBytes()
         ], function (array $rows) use ($promiseResolver) {
             $rewards = [];
             foreach ($rows as $row) {
@@ -176,7 +178,7 @@ class DBController
         $promiseResolver = new PromiseResolver();
         $this->database->executeGeneric("data.rewards.setPlayerRewards", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString(),
+            "player" => $player->getUniqueId()->getBytes(),
             "reward" => $reward->getId(),
             "amount" => $amount
         ], function () use ($promiseResolver) {
@@ -295,7 +297,7 @@ class DBController
         $promiseResolver = new PromiseResolver();
         $this->database->executeGeneric("data.rewards.resetPlayerCrateRewards", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString()
+            "player" => $player->getUniqueId()->getBytes()
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);
         }, function (SqlError $error) use ($promiseResolver) {
@@ -318,7 +320,7 @@ class DBController
         $promiseResolver = new PromiseResolver();
         $this->database->executeGeneric("data.rewards.resetPlayerCrateReward", [
             "type" => $type->getId(),
-            "player" => $player->getUniqueId()->toString(),
+            "player" => $player->getUniqueId()->getBytes(),
             "reward" => $reward->getId()
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);
@@ -339,7 +341,7 @@ class DBController
     {
         $promiseResolver = new PromiseResolver();
         $this->database->executeGeneric("data.rewards.resetPlayerRewards", [
-            "player" => $player->getUniqueId()->toString()
+            "player" => $player->getUniqueId()->getBytes()
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);
         }, function (SqlError $error) use ($promiseResolver) {
@@ -349,4 +351,70 @@ class DBController
 
         return $promiseResolver->getPromise();
     }
+
+    /**
+     * Add a received reward for a player
+     * @param Player|string $player
+     * @param CrateType $type
+     * @param CrateReward $reward
+     * @return Promise
+     */
+    public function addReceivedReward(Player|string $player, CrateType $type, CrateReward $reward): Promise
+    {
+        $promiseResolver = new PromiseResolver();
+        $this->database->executeGeneric("data.received.addReward", [
+            "player" => is_string($player) ? $player : $player->getUniqueId()->getBytes(),
+            "type" => $type->getId(),
+            "reward" => $reward->getId()
+        ], function () use ($promiseResolver) {
+            $promiseResolver->resolve(null);
+        }, function (SqlError $error) use ($promiseResolver) {
+            $this->plugin->getLogger()->warning($error->getErrorMessage());
+            $promiseResolver->reject();
+        });
+
+        return $promiseResolver->getPromise();
+    }
+
+    /**
+     * Get all the received rewards of a player
+     * @param Player $player
+     * @return Promise<array<array{id: int, player: string, type: string, reward: string}>>
+     */
+    public function getReceivedRewards(Player $player): Promise
+    {
+        $promiseResolver = new PromiseResolver();
+        $this->database->executeSelect("data.received.getRewards", [
+            "player" => $player->getUniqueId()->getBytes()
+        ], function (array $rows) use ($promiseResolver) {
+            $promiseResolver->resolve($rows);
+        }, function (SqlError $error) use ($promiseResolver) {
+            $this->plugin->getLogger()->warning($error->getErrorMessage());
+            $promiseResolver->reject();
+        });
+
+        return $promiseResolver->getPromise();
+    }
+
+    /**
+     * Remove a received reward with the given ID
+     * @param int $id
+     * @return Promise
+     */
+    public function removeReceivedReward(int $id): Promise
+    {
+        $promiseResolver = new PromiseResolver();
+        $this->database->executeGeneric("data.received.removeReward", [
+            "id" => $id
+        ], function () use ($promiseResolver) {
+            $promiseResolver->resolve(null);
+        }, function (SqlError $error) use ($promiseResolver) {
+            $this->plugin->getLogger()->warning($error->getErrorMessage());
+            $promiseResolver->reject();
+        });
+
+        return $promiseResolver->getPromise();
+    }
+
+
 }

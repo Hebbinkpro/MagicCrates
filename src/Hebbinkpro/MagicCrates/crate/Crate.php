@@ -22,9 +22,9 @@ namespace Hebbinkpro\MagicCrates\crate;
 use Hebbinkpro\MagicCrates\event\CrateOpenEvent;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\tasks\StartCrateAnimationTask;
+use Hebbinkpro\MagicCrates\utils\InventoryUtils;
 use pocketmine\block\tile\Chest;
 use pocketmine\item\Item;
-use pocketmine\item\VanillaItems;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\Server;
@@ -232,8 +232,8 @@ class Crate
             return;
         }
 
-        // the player has less than 2 free slots
-        if (!$inv->canAddItem(VanillaItems::DIAMOND_SWORD()->setCount(2))) {
+        // no empty slots available
+        if (sizeof(InventoryUtils::getEmptySlots($inv)) < 2) {
             $player->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full, come back later when your have enough space in your inventory!");
             return;
         }
@@ -267,7 +267,7 @@ class Crate
         // get the random reward and execute the opening after the reward is fetched
         $this->type->getRandomReward($player, function (CrateReward $reward, int $playerRewarded) use ($player) {
             // reward the player
-            $this->type->rewardPlayer($player, $reward, $playerRewarded);
+            $this->type->updatePlayerRewards($player, $reward, $playerRewarded);
 
             // send the reward message
             $player->sendMessage(MagicCrates::getPrefix() . " §eYou are opening §6{$this->type->getName()}§r§e...");

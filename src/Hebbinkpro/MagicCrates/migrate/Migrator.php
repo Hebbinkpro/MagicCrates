@@ -24,6 +24,7 @@ use Hebbinkpro\MagicCrates\crate\Crate;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\plugin\PluginBase;
 use pocketmine\world\Position;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Class that handles migration of old versions to new versions
@@ -118,11 +119,14 @@ class Migrator
 
         foreach ($contents as $typeId => $rewards) {
             foreach ($rewards as $rewardId => $players) {
-                foreach ($players as $playerUUID => $amount) {
-                    MagicCrates::getDatabase()->setRawPlayerRewards($typeId, $playerUUID, $rewardId, $amount)->onCompletion(fn() => null,
-                        function () use ($plugin, $typeId, $playerUUID, $rewardId, $amount) {
+                foreach ($players as $playerStringId => $amount) {
+                    // convert the uuid string to a uuid
+                    $uuid = Uuid::fromString($playerStringId);
+
+                    MagicCrates::getDatabase()->setRawPlayerRewards($typeId, $uuid->getBytes(), $rewardId, $amount)->onCompletion(fn() => null,
+                        function () use ($plugin, $typeId, $uuid, $rewardId, $amount) {
                             // something went wrong while setting the amount
-                            $plugin->getLogger()->warning("Cannot set the amount of rewards received by player $playerUUID for reward $rewardId in crate $typeId.");
+                            $plugin->getLogger()->warning("Cannot set the amount of rewards received by player {$uuid->toString()} for reward $rewardId in crate $typeId.");
                         });
                 }
             }

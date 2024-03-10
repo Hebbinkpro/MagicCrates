@@ -95,7 +95,7 @@ class StartCrateAnimationTask extends Task
         $spawnPos = $pos->add(0.5, 0, 0.5);
 
         $nbt = EntityUtils::createBaseNBT($spawnPos);
-        $nbt->setString("owner", $this->player->getName());
+        $nbt->setString("player", $this->player->getUniqueId()->getBytes());
         $nbt->setString("crate-pos", serialize($pos->asVector3()));
         $nbt->setInt("spawn-delay", $spawnDelay);
 

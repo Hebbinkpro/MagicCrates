@@ -22,8 +22,6 @@ namespace Hebbinkpro\MagicCrates\crate;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\utils\CrateCommandSender;
 use Hebbinkpro\MagicCrates\utils\StringUtils;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
 use pocketmine\player\Player;
 
@@ -191,41 +189,6 @@ class CrateType
         return $this->rewards[$id] ?? null;
     }
 
-    public function executeCommands(Player $player, CrateReward $reward): void
-    {
-
-        $values = [
-            "player" => $player->getName(),
-            "crate_type" => $this->getId(),
-            "crate_id" => $this->getId(),
-            "crate" => $this->getName(),
-            "reward_id" => $reward->getId(),
-            "reward" => $reward->getName()
-        ];
-
-        $commands = array_merge($this->commands, $reward->getCommands());
-
-        foreach ($commands as $cmd) {
-            CrateCommandSender::getInstance()->executeCommand(StringUtils::prepare($cmd, $values));
-        }
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getCommands(): array
-    {
-        return $this->commands;
-    }
-
     /**
      * Get the key from a players inventory
      * @param Player $player
@@ -269,18 +232,27 @@ class CrateType
 
     public function getCrateKey(): Item
     {
-        $keyName = StringUtils::prepare(MagicCrates::getKeyName(), [
-            "crate" => $this->getName(),
-            "crate_id" => $this->getId()
-        ]);
-
         $key = MagicCrates::getKeyItem();
-        $key->setCustomName($keyName);
-        $key->setLore([MagicCrates::getPrefix()]);
-        $key->addEnchantment(new EnchantmentInstance(VanillaEnchantments::UNBREAKING(), 1));
+
+        // changes all parameters inside the custom name
+        $key->setCustomName(StringUtils::prepare($key->getCustomName(), [
+            "prefix" => MagicCrates::getPrefix(),
+            "crate_type" => $this->getId(),
+            "crate_id" => $this->getId(),
+            "crate" => $this->getName(),
+        ]));
+
         $key->getNamedTag()->setString(CrateType::KEY_NBT_TAG, $this->id);
 
         return $key;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -290,7 +262,7 @@ class CrateType
      * @param int $playerRewarded amount of times the reward is rewarded to the player
      * @return void
      */
-    public function rewardPlayer(Player $player, CrateReward $reward, int $playerRewarded): void
+    public function updatePlayerRewards(Player $player, CrateReward $reward, int $playerRewarded): void
     {
         // get the reward with the same id from the type
         $realReward = $this->rewards[$reward->getId()] ?? null;
@@ -299,6 +271,42 @@ class CrateType
             // set the player reward in the db
             MagicCrates::getDatabase()->setPlayerRewards($this, $player, $realReward, $playerRewarded + 1);
         }
+    }
+
+    /**
+     * Give the items and execute the commands of a reward for the given player
+     * @param Player $player
+     * @param CrateReward $reward
+     * @return void
+     */
+    public function rewardPlayer(Player $player, CrateReward $reward): void
+    {
+        $player->sendMessage(MagicCrates::getPrefix() . " §aYou received §e" . $reward->getName() . "§a from crate §e" . $this->getName());
+
+        foreach ($reward->getItems() as $item) {
+            $player->getInventory()->addItem($item);
+        }
+
+        $commands = array_merge($this->commands, $reward->getCommands());
+        foreach ($commands as $cmd) {
+            CrateCommandSender::getInstance()->executeCommand(StringUtils::prepare($cmd, [
+                "prefix" => MagicCrates::getPrefix(),
+                "player" => $player->getName(),
+                "crate_type" => $this->getId(),
+                "crate_id" => $this->getId(),
+                "crate" => $this->getName(),
+                "reward_id" => $reward->getId(),
+                "reward" => $reward->getName()
+            ]));
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getCommands(): array
+    {
+        return $this->commands;
     }
 
     /**

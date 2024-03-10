@@ -22,6 +22,7 @@ namespace Hebbinkpro\MagicCrates\commands;
 use CortexPE\Commando\BaseCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CreateCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\key\KeyCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\ReceiveCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\RemoveCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\reward\RewardCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
@@ -32,10 +33,15 @@ class MagicCratesCommand extends BaseCommand
     public function onRun(CommandSender $sender, string $aliasUsed, array $args): void
     {
         $sender->sendMessage(MagicCrates::getPrefix() . " §eHelp:");
-        $sender->sendMessage("- /mc create => Toggle crate create mode");
-        $sender->sendMessage("- /mc remove => Toggle crate remove mode");
-        $sender->sendMessage("- /mc key    => Give a crate key to a player");
-        $sender->sendMessage("- /mc reward => Manage the amount of times crate rewards are received");
+        $sender->sendMessage("- /mc receive => Receive your unreceived rewards");
+        if ($sender->hasPermission("magiccrates.cmd.create"))
+            $sender->sendMessage("- /mc create => Toggle crate create mode");
+        if ($sender->hasPermission("magiccrates.cmd.remove"))
+            $sender->sendMessage("- /mc remove => Toggle crate remove mode");
+        if ($sender->hasPermission("magiccrates.cmd.key"))
+            $sender->sendMessage("- /mc key    => Give a crate key to a player");
+        if ($sender->hasPermission("magiccrates.cmd.reward"))
+            $sender->sendMessage("- /mc reward => Manage the amount of times crate rewards are received");
     }
 
     protected function prepare(): void
@@ -50,6 +56,7 @@ class MagicCratesCommand extends BaseCommand
         $this->registerSubCommand(new RemoveCommand($plugin, "remove", "Toggle the remove mode"));
         $this->registerSubCommand(new KeyCommand($plugin, "key", "Give a crate key to a player"));
         $this->registerSubCommand(new RewardCommand($plugin, "reward", "Manage the amount of times crate rewards are received"));
+        $this->registerSubCommand(new ReceiveCommand($plugin, "receive", "Receive your unreceived rewards"));
     }
 
 

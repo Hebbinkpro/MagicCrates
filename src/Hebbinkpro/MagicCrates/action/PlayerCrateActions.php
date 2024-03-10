@@ -46,11 +46,11 @@ class PlayerCrateActions
      */
     public function setAction(Player $player, CrateAction $action): void
     {
-        $uuid = $player->getUniqueId()->toString();
+        $uuid = $player->getUniqueId()->getBytes();
 
         // if the action is none, remove the entry
         if ($action === CrateAction::NONE) unset($this->players[$uuid]);
-        else $this->players[$player->getUniqueId()->toString()] = $action;
+        else $this->players[$player->getUniqueId()->getBytes()] = $action;
     }
 
     /**
@@ -60,6 +60,6 @@ class PlayerCrateActions
      */
     public function getAction(Player $player): CrateAction
     {
-        return $this->players[$player->getUniqueId()->toString()] ?? CrateAction::NONE;
+        return $this->players[$player->getUniqueId()->getBytes()] ?? CrateAction::NONE;
     }
 }

@@ -23,6 +23,7 @@ use Hebbinkpro\MagicCrates\crate\CrateReward;
 use Hebbinkpro\MagicCrates\event\CrateRewardEvent;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\Server;
 use pocketmine\world\sound\Sound;
 use pocketmine\world\sound\XpLevelUpSound;
 
@@ -40,32 +41,26 @@ class CrateRewardItemEntity extends CrateItemEntity
         }
 
 
-        if ($this->isFlaggedForDespawn() && !$this->rewarded) $this->reward();
+        if ($this->isFlaggedForDespawn() && !$this->rewarded) {
+            $player = Server::getInstance()->getPlayerByRawUUID($this->player);
 
-        return $hasUpdate;
-    }
+            if ($player !== null && $this->reward->canPlayerReceive($player)) {
+                $this->crate->getType()->rewardPlayer($player, $this->reward);
+                (new CrateRewardEvent($this->crate, $player, $this->reward))->call();
+            } else {
+                $player?->sendMessage(MagicCrates::getPrefix() . " §cYou do not have enough inventory space to receive the rewards. Please clear your inventory and execute '/mc receive' to receive your rewards.");
 
-    /**
-     * Rewards the owner with the given reward
-     * @return void
-     */
-    protected function reward(): void
-    {
-
-        if ($this->owner !== null && $this->owner->isOnline()) {
-            foreach ($this->reward->getItems() as $item) {
-                $this->owner->getInventory()->addItem($item);
+                // add the rewards of the player to the received rewards
+                MagicCrates::getDatabase()->addReceivedReward($this->player, $this->crate->getType(), $this->reward);
             }
-            $this->owner->sendMessage(MagicCrates::getPrefix() . " §aYou won §e" . $this->reward->getName());
 
-            $this->crate->getType()->executeCommands($this->owner, $this->reward);
-            (new CrateRewardEvent($this->crate, $this->owner, $this->reward))->call();
+            // close the crate
+            $this->crate->close();
+
+            $this->rewarded = true;
         }
 
-        // close the crate
-        $this->crate->close();
-
-        $this->rewarded = true;
+        return $hasUpdate;
     }
 
     public function getRevealSound(): Sound

@@ -228,7 +228,19 @@ class EventListener implements Listener
     public function onJoin(PlayerJoinEvent $e): void
     {
         $player = $e->getPlayer();
+
+        // show the particles
         Crate::showAllFloatingText($player);
+
+        MagicCrates::getDatabase()->getReceivedRewards($player)
+            ->onCompletion(function (array $rewards) use ($player) {
+                if (sizeof($rewards) > 0) {
+                    // notify the player that they have unreceived rewards
+                    $player->sendToastNotification("You have unreceived rewards", "Execute '/mc receive' to receive all your rewards.");
+                }
+            }, function () use ($player) {
+                $this->plugin->getLogger()->warning("Could not load the received rewards of {$player->getName()}");
+            });
     }
 
     public function onWorldChange(EntityTeleportEvent $e): void

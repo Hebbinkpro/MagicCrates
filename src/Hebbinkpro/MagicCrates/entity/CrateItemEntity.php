@@ -29,7 +29,6 @@ use pocketmine\network\mcpe\protocol\AddItemActorPacket;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\player\Player;
-use pocketmine\Server;
 use pocketmine\world\Position;
 use pocketmine\world\sound\PopSound;
 use pocketmine\world\sound\Sound;
@@ -48,7 +47,7 @@ class CrateItemEntity extends Entity
     public bool $keepMovement = true;
     protected int $age = 0;
     protected int $delay = 0;
-    protected ?Player $owner;
+    protected string $player;
     protected Crate $crate;
     protected ?Item $displayItem;
     protected int $commandCount;
@@ -119,7 +118,7 @@ class CrateItemEntity extends Entity
         $nbt = parent::saveNBT();
 
         $nbt->setShort("age", $this->age);
-        $nbt->setString("owner", $this->owner);
+        $nbt->setString("player", $this->player);
         $nbt->setString("crate-pos", serialize($this->crate->getPos()->asVector3()));
         $nbt->setInt("spawn-delay", $this->spawnDelay);
         $nbt->setTag("display-item", $this->displayItem->nbtSerialize());
@@ -138,7 +137,13 @@ class CrateItemEntity extends Entity
         parent::initEntity($nbt);
 
         $this->age = $nbt->getShort("age", 0);
-        $this->owner = Server::getInstance()->getPlayerExact($nbt->getString("owner", ""));
+        $this->player = $nbt->getString("player", "");
+
+        if ($this->player === "") {
+            $this->flagForDespawn();
+            return;
+        }
+
         $this->crate = Crate::getByPosition(Position::fromObject(unserialize($nbt->getString("crate-pos")), $this->getWorld()));
         $this->spawnDelay = $nbt->getInt("spawn-delay", 0);
         $itemTag = $nbt->getCompoundTag("display-item");

@@ -9,9 +9,11 @@ prefix: §r[§6Magic§cCrates§r]
 # crate key settings
 key:
   # The item used for the crate key
-  item: minecraft:paper
+  id: minecraft:paper
   # The name for a crate key
   name: §r[§6Crate §cKey§r] §e{crate}
+  # the lore of the crate key
+  lore: §r[§6Magic§cCrates§r]
 
 # form settings
 form:

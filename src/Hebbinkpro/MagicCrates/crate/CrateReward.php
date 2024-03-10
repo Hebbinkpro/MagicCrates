@@ -19,12 +19,12 @@
 
 namespace Hebbinkpro\MagicCrates\crate;
 
+use Hebbinkpro\MagicCrates\utils\InventoryUtils;
 use Hebbinkpro\MagicCrates\utils\ItemUtils;
 use pocketmine\block\Air;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\StringToEnchantmentParser;
 use pocketmine\item\Item;
 use pocketmine\item\StringToItemParser;
+use pocketmine\player\Player;
 
 class CrateReward
 {
@@ -40,7 +40,7 @@ class CrateReward
     /**
      * @param string $id the id of the reward
      * @param string $name the name of the reward
-     * @param Item[] $items the items that has to be given to the player
+     * @param Item[] $items the items that have to be given to the player
      * @param string[] $commands the commands to be executed after rewarding the reward
      * @param string|null $icon the icon to be displayed
      */
@@ -160,7 +160,7 @@ class CrateReward
     {
         $items = [];
         foreach ($itemsData as $i => $itemData) {
-            $item = self::parseItem($itemData, $errorMsg);
+            $item = ItemUtils::parseItem($itemData, $errorMsg);
 
             // we do not allow the user to continue with their actions before the user fixes their JSON
             if ($item === null) {
@@ -173,48 +173,6 @@ class CrateReward
         }
 
         return $items;
-    }
-
-    /**
-     * @param array{id: string, name?: string, amount?: int, lore?: string|string[], enchantments?: array{name: string, level: int}[]} $itemData
-     * @param string $errorMsg
-     * @return Item|null
-     */
-    public static function parseItem(array $itemData, string &$errorMsg = ""): ?Item
-    {
-        if (!isset($itemData["id"])) {
-            $errorMsg = "No item id given.";
-            return null;
-        }
-
-        $item = ItemUtils::getItemFromId($itemData["id"]);
-        if ($item === null) {
-            $errorMsg = "Invalid item id given: " . $itemData["id"];
-            return null;
-        }
-
-        if (isset($itemData["name"])) $item->setCustomName(strval($itemData["name"]));
-
-        $amount = intval($itemData["amount"] ?? 1);
-        $item->setCount($amount);
-
-        if (isset($itemData["lore"])) {
-            if (is_array($itemData["lore"])) $lore = $itemData["lore"];
-            else $lore = [strval($itemData["lore"])];
-            $item->setLore($lore);
-        }
-
-        if (isset($itemData["enchantments"]) && is_array($itemData["enchantments"])) {
-            $enchData = $itemData["enchantments"];
-            foreach ($enchData as $ench) {
-                if (!isset($ench["name"])) continue;
-
-                $level = intval($ench["level"] ?? 1);
-                $item->addEnchantment(new EnchantmentInstance(StringToEnchantmentParser::getInstance()->parse($ench["name"]), $level));
-            }
-        }
-
-        return $item;
     }
 
     /**
@@ -300,4 +258,15 @@ class CrateReward
         return new CrateReward($this->id, $this->name, $amount, $this->items, $this->commands, $this->icon);
     }
 
+    /**
+     * Check if the player can receive the items from the reward
+     * @param Player $player
+     * @return bool
+     */
+    public function canPlayerReceive(Player $player): bool
+    {
+        if (sizeof($this->items) == 0) return true;
+        // return if every item can be added to the player's inventory
+        return InventoryUtils::canAddItems($player->getInventory(), $this->items);
+    }
 }

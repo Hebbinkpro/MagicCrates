@@ -43,12 +43,17 @@ class MagicCrates extends PluginBase
 {
     public const CONFIG_VERSION = 1;
     public const DEFAULT_PREFIX = "§r[§6Magic§cCrates§r]";
-    public const DEFAULT_KEY_ITEM = "minecraft:paper";
-    public const DEFAULT_KEY_NAME = "§r[§6Crate §cKey§r] §e{crate}";
+    public const DEFAULT_KEY = [
+        "id" => "minecraft:paper",
+        "name" => "§r[§6Crate §cKey§r] §e{crate}",
+        "enchantments" => [
+            "name" => "unbreaking"
+        ]
+    ];
+
     private static MagicCrates $instance;
     private string $prefix;
-    private string $keyName;
-    private string $keyItem;
+    private Item $keyItem;
     private DBController $database;
 
 
@@ -62,21 +67,13 @@ class MagicCrates extends PluginBase
     }
 
     /**
-     * Get the name of the crate key
-     * @return string
-     */
-    public static function getKeyName(): string
-    {
-        return self::$instance->keyName;
-    }
-
-    /**
-     * Get a new item instance for the crate key
+     * Get the crate key item
      * @return Item
      */
     public static function getKeyItem(): Item
     {
-        return ItemUtils::getItemFromId(self::$instance->keyItem);
+        // return a copy of the key item
+        return clone self::$instance->keyItem;
     }
 
     /**
@@ -153,17 +150,18 @@ class MagicCrates extends PluginBase
 
         $this->prefix = $this->getConfig()->get("prefix", self::DEFAULT_PREFIX);
 
-        $keySettings = $this->getConfig()->get("key", ["item" => self::DEFAULT_KEY_ITEM, "name" => self::DEFAULT_KEY_NAME]);
+        $key = $this->getConfig()->get("key", self::DEFAULT_KEY);
 
         // check if the given item is valid, otherwise use the default item
-        $keyItem = ItemUtils::getItemFromId($keySettings["item"]);
+        $err = "";
+        $keyItem = ItemUtils::parseItem($key, $err);
         if ($keyItem === null) {
-            $this->getLogger()->warning("Cannot find the key item " . $keySettings["item"] . ". The default item (" . self::DEFAULT_KEY_ITEM . ") will be used instead.");
-            $keySettings["item"] = self::DEFAULT_KEY_ITEM;
+            $this->getLogger()->warning("No valid key given in the config.yml: $err");
+            $this->getLogger()->warning("The default key will be used instead.");
+            $keyItem = ItemUtils::parseItem(self::DEFAULT_KEY);
         }
 
-        $this->keyItem = $keySettings["item"];
-        $this->keyName = $keySettings["name"];
+        $this->keyItem = $keyItem;
     }
 
     /**

@@ -21,6 +21,8 @@ namespace Hebbinkpro\MagicCrates\utils;
 
 use customiesdevs\customies\item\CustomiesItemFactory;
 use Exception;
+use pocketmine\item\enchantment\EnchantmentInstance;
+use pocketmine\item\enchantment\StringToEnchantmentParser;
 use pocketmine\item\Item;
 use pocketmine\item\StringToItemParser;
 use pocketmine\nbt\tag\CompoundTag;
@@ -74,5 +76,79 @@ class ItemUtils
             ItemTranslator::NO_BLOCK_RUNTIME_ID,
             new CompoundTag()
         );
+    }
+
+    /**
+     * @param array{id: string, name?: string, amount?: int, lore?: string|string[], enchantments?: array{name: string, level: int}[]} $itemData
+     * @param string $errorMsg
+     * @return Item|null
+     */
+    public static function parseItem(array $itemData, string &$errorMsg = ""): ?Item
+    {
+        if (!isset($itemData["id"])) {
+            $errorMsg = "No item id given.";
+            return null;
+        }
+
+        $item = self::getItemFromId($itemData["id"]);
+        if ($item === null) {
+            $errorMsg = "Invalid item id given: " . $itemData["id"];
+            return null;
+        }
+
+        if (isset($itemData["name"])) $item->setCustomName(strval($itemData["name"]));
+
+        $amount = intval($itemData["amount"] ?? 1);
+        $item->setCount($amount);
+
+        if (isset($itemData["lore"])) {
+            if (is_array($itemData["lore"])) $lore = $itemData["lore"];
+            else $lore = [strval($itemData["lore"])];
+            $item->setLore($lore);
+        }
+
+        if (isset($itemData["enchantments"]) && is_array($itemData["enchantments"])) {
+            $enchantments = $itemData["enchantments"];
+
+            if (isset($enchantments["name"])) {
+                // there is only a single enchantment given
+                $enchantment = self::parseEnchantment($enchantments);
+                if ($enchantment === null) {
+                    $errorMsg = "Invalid enchantment: " . $enchantments["name"];
+                    return null;
+                }
+
+                $item->addEnchantment($enchantment);
+            } else {
+                // there are multiple enchantments given
+                foreach ($enchantments as $i => $enchData) {
+                    $enchantment = self::parseEnchantment($enchData);
+                    if ($enchantment === null) {
+                        $errorMsg = "Invalid enchantment: " . $enchData["name"] ?? $i;
+                        return null;
+                    }
+                    $item->addEnchantment($enchantment);
+                }
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * Parse an enchantment instance from the given data
+     * @param array $data
+     * @return EnchantmentInstance|null
+     */
+    public static function parseEnchantment(array $data): ?EnchantmentInstance
+    {
+        if (!isset($data["name"])) return null;
+
+        $enchantment = StringToEnchantmentParser::getInstance()->parse($data["name"]);
+        if ($enchantment === null) return null;
+
+        $level = intval($data["level"] ?? 1);
+        return new EnchantmentInstance($enchantment, $level);
+
     }
 }

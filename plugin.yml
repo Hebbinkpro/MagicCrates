@@ -9,7 +9,7 @@ softdepend:
 
 permissions:
   magiccrates.cmd:
-    default: op
+    default: true
     description: Access to the /magiccrates command
   magiccrates.cmd.create:
     default: op
@@ -32,6 +32,9 @@ permissions:
   magiccrates.cmd.reward.reset:
     default: op
     description: Access to the /magiccrates reward reset command
+  magiccrates.cmd.receive:
+    default: true
+    description: Access to the /magiccrates receive command
   magiccrates.break:
     default: false
   magiccrates.break.remove:
