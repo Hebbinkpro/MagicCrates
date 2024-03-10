@@ -53,10 +53,10 @@ class KeyAllCommand extends BaseSubCommand
         // give all online players a crate key
         foreach (Server::getInstance()->getOnlinePlayers() as $player) {
             $type->giveCrateKey($player, $amount);
-            $player->sendMessage(MagicCrates::getPrefix() . " §aYou have received {$amount}x $typeName §r§akey$s.");
+            $player->sendMessage(MagicCrates::getPrefix() . " §aYou have received §e$amount §e$typeName §r§ekey$s.");
         }
 
-        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players have received {$amount}x $typeName §r§ekey$s.");
+        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players have received §6$amount §ee$typeName §r§ekey$s.");
     }
 
     /**

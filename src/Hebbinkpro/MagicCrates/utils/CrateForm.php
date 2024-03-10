@@ -130,13 +130,13 @@ class CrateForm
                 return;
             }
 
-            $player->sendMessage(MagicCrates::getPrefix() . " §aThe crate isn't removed");
+            $player->sendMessage(MagicCrates::getPrefix() . " §aThe crate is not removed");
         });
 
         $form->setTitle("Remove crate");
 
-        $form->setContent("Do you want to delete this §e{$crate->getType()->getId()}§r crate?\n\nClick §cDelete§r to delete the crate, or click §eCancel§r to cancel.");
-        $form->setButton1("§cDelete");
+        $form->setContent("Do you want to remove this §e{$crate->getType()->getId()}§r crate?\n\nClick §cRemove§r to remove the crate, or click §eCancel§r to cancel.");
+        $form->setButton1("§cRemove");
         $form->setButton2("§eCancel");
 
         $player->sendForm($form);
@@ -186,7 +186,7 @@ class CrateForm
                 $form->setTitle("Crate Rewards: " . $crate->getType()->getName());
 
                 // add the open button if the player has a valid key in their inventory
-                if ($crate->getType()->getKeyFromPlayer($player) !== null) $form->addButton("§aOpen Crate", -1, "", "open");
+                if ($crate->getType()->getKeyFromPlayer($player) !== null) $form->addButton("§2Open Crate", -1, "", "open");
 
                 $form->setContent("This crate is filled with $totalRewards items.");
 

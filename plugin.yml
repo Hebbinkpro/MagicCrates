@@ -35,6 +35,9 @@ permissions:
   magiccrates.cmd.receive:
     default: true
     description: Access to the /magiccrates receive command
+  magiccrates.cmd.receive.show:
+    default: true
+    description: Access to the /magiccrates receive show command
   magiccrates.break:
     default: false
   magiccrates.break.remove:

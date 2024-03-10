@@ -41,7 +41,7 @@ class ShowReceiveCommand extends BaseSubCommand
 
     protected function prepare(): void
     {
-        $this->setPermission("magiccrates.cmd.receive");
+        $this->setPermission("magiccrates.cmd.receive.show");
         $this->addConstraint(new InGameRequiredConstraint($this));
     }
 }

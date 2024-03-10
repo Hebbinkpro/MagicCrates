@@ -17,21 +17,23 @@ Add customizable crates to your server.
 
 ## How to use
 
-### Commands
+### Commands and permissions
 
 Command aliases: `/magiccrates`, `/mc`
 
-| Command                                                           | Description                                                      | Permission-                  |
-|-------------------------------------------------------------------|------------------------------------------------------------------|------------------------------|
-| `/magiccrates`                                                    | MagicCrates Command                                              | magiccrates.cmd              |
-| `/magiccrates create`                                             | Toggle crate Create mode                                         | magiccrates.cmd.create       |
-| `/magiccrates remove`                                             | Toggle crate Remove mode                                         | magiccrates.cmd.remove       |
-| `/magiccrates key <crate_type> [amount] [player]`                 | Give a crate key to a player                                     | magiccrates.cmd.key          |
-| `/magiccrates key all <crate_type> [amount]`                      | Give a crate key to all online players                           | magiccrates.cmd.key.all      |
-| `/magiccrates reward set <crate_type> <player> <reward> <amount>` | Set the amount of times a reward is received                     | magiccrates.cmd.reward.set   |
-| `/magiccrates reward reset crate <crate_type>`                    | Reset the amount of times all rewards in the crate are received  | magiccrates.cmd.reward.reset |
-| `/magiccrates reward reset reward <crate_type> <reward>`          | Reset the amount of times the reward is received in a crate type | magiccrates.cmd.reward.reset |
-| `/magiccrates reward reset player <crate_type> <player> [reward]` | Reset the amount of times a player has received rewards          | magiccrates.cmd.reward.reset |
+| Command                                                           | Description                                                         | Permission                   | Default |
+|-------------------------------------------------------------------|---------------------------------------------------------------------|------------------------------|---------|
+| `/magiccrates`                                                    | MagicCrates Command                                                 | magiccrates.cmd              | True    |
+| `/magiccrates receive`                                            | Receive all your unreceived rewards                                 | magiccrates.cmd.receive      | True    |
+| `/magiccrates receive show`                                       | Show all rewards you have not yet received                          | magiccrates.cmd.receive.show | True    |
+| `/magiccrates create`                                             | Toggle crate Create mode                                            | magiccrates.cmd.create       | OP      |
+| `/magiccrates remove`                                             | Toggle crate Remove mode                                            | magiccrates.cmd.remove       | OP      |
+| `/magiccrates key <crate_type> [amount] [player]`                 | Give a crate key to a player                                        | magiccrates.cmd.key          | OP      |
+| `/magiccrates key all <crate_type> [amount]`                      | Give a crate key to all the online players                          | magiccrates.cmd.key.all      | OP      |
+| `/magiccrates reward set <crate_type> <player> <reward> <amount>` | Set the amount of times a reward is received                        | magiccrates.cmd.reward.set   | OP      |
+| `/magiccrates reward reset crate <crate_type>`                    | Reset the amount of times all rewards from the crate are received   | magiccrates.cmd.reward.reset | OP      |
+| `/magiccrates reward reset reward <crate_type> <reward>`          | Reset the amount of times a reward is received from a crate type    | magiccrates.cmd.reward.reset | OP      |
+| `/magiccrates reward reset player <player> [crate_type] [reward]` | Reset the amount of times a player has received rewards from crates | magiccrates.cmd.reward.reset | OP      |
 
 ### Create a new crate
 
