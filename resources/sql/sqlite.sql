@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS Rewards
     PRIMARY KEY (type, player, reward)
 );
 -- #}
--- #{   receivedRewards
-CREATE TABLE IF NOT EXISTS ReceivedRewards
+-- #{   unreceivedRewards
+CREATE TABLE IF NOT EXISTS UnreceivedRewards
 (
     id     INTEGER PRIMARY KEY AUTOINCREMENT,
     player VARCHAR(255) NOT NULL,
@@ -126,24 +126,24 @@ WHERE type = :type
 -- #}
 -- #}
 
--- #{   received
+-- #{   unreceived
 -- #{       addReward
 -- #            :player string
 -- #            :type string
 -- #            :reward string
-INSERT INTO ReceivedRewards(player, type, reward)
+INSERT INTO UnreceivedRewards(player, type, reward)
 VALUES (:player, :type, :reward);
 -- #}
 -- #{       getRewards
 -- #            :player string
 SELECT *
-FROM ReceivedRewards
+FROM UnreceivedRewards
 WHERE player = :player;
 -- #}
 -- #{       removeReward
 -- #            :id int
 DELETE
-FROM ReceivedRewards
+FROM UnreceivedRewards
 WHERE id = :id
 -- #}
 -- #}

@@ -232,7 +232,7 @@ class EventListener implements Listener
         // show the particles
         Crate::showAllFloatingText($player);
 
-        MagicCrates::getDatabase()->getReceivedRewards($player)
+        MagicCrates::getDatabase()->getUnreceivedRewards($player)
             ->onCompletion(function (array $rewards) use ($player) {
                 if (sizeof($rewards) > 0) {
                     // notify the player that they have unreceived rewards

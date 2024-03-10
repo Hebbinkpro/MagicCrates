@@ -281,8 +281,6 @@ class CrateType
      */
     public function rewardPlayer(Player $player, CrateReward $reward): void
     {
-        $player->sendMessage(MagicCrates::getPrefix() . " §aYou received §e" . $reward->getName() . "§a from crate §e" . $this->getName());
-
         foreach ($reward->getItems() as $item) {
             $player->getInventory()->addItem($item);
         }
@@ -340,7 +338,7 @@ class CrateType
     }
 
     /**
-     * Get all rewards the player can get
+     * Get all the rewards the player can receive
      * @param Player $player
      * @param callable(array<string, CrateReward> $rewards, array<string, int> $playerRewarded, int $rewardTotal): void $callback
      * @return void
@@ -363,6 +361,12 @@ class CrateType
             });
     }
 
+    /**
+     * Get the rewards the player can get
+     * @param array $rewardTotals the rewards the player can get
+     * @param array $playerRewarded the amount of times the player has received the rewards
+     * @return array{array<string, CrateReward>, array<string, int>}
+     */
     protected function determinePlayerRewards(array $rewardTotals, array $playerRewarded): array
     {
         /** @var array<string, CrateReward> $rewards */

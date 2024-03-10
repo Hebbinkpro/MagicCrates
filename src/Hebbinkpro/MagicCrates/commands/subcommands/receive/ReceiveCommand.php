@@ -17,10 +17,11 @@
  * (at your option) any later version.
  */
 
-namespace Hebbinkpro\MagicCrates\commands\subcommands;
+namespace Hebbinkpro\MagicCrates\commands\subcommands\receive;
 
 use CortexPE\Commando\BaseSubCommand;
 use CortexPE\Commando\constraint\InGameRequiredConstraint;
+use Hebbinkpro\MagicCrates\crate\CrateReward;
 use Hebbinkpro\MagicCrates\crate\CrateType;
 use Hebbinkpro\MagicCrates\MagicCrates;
 use Hebbinkpro\MagicCrates\utils\InventoryUtils;
@@ -37,56 +38,46 @@ class ReceiveCommand extends BaseSubCommand
             return;
         }
 
-        MagicCrates::getDatabase()->getReceivedRewards($sender)
-            ->onCompletion(function (array $rewards) use ($sender) {
-                if (sizeof($rewards) == 0) {
+        MagicCrates::getDatabase()->getUnreceivedRewards($sender)
+            ->onCompletion(function (array $unreceivedRewards) use ($sender) {
+                /** @var array<int, array{type: CrateType, reward: CrateReward}> $unreceivedRewards */
+
+                if (sizeof($unreceivedRewards) == 0) {
                     // the player has received all their rewards
                     $sender->sendMessage(MagicCrates::getPrefix() . "§e You have received all your rewards.");
                     return;
                 }
 
-                if (InventoryUtils::getEmptySlots($sender->getInventory()) < sizeof($rewards)) {
-                    $sender->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full, try again when you have cleared your inventory!");
+                if (sizeof(InventoryUtils::getEmptySlots($sender->getInventory())) < sizeof($unreceivedRewards)) {
+                    $sender->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full. Please clear your inventory and try again.");
                     return;
                 }
 
                 // loop through all the rewards the player has to receive
-                foreach ($rewards as $reward) {
-                    $id = $reward["id"];
-                    $typeId = $reward["type"];
-                    $rewardId = $reward["reward"];
-
-                    $type = CrateType::getById($typeId);
-                    if ($type === null) continue;
-
-                    $reward = $type->getRewardById($rewardId);
-                    if ($reward === null) continue;
-
-                    // check if the player has enough inventory space
-                    if (!$reward->canPlayerReceive($sender)) {
-                        $sender->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full, please clear your inventory to receive the reward $rewardId from crate " . $type->getName());
-                        return;
-                    }
+                foreach ($unreceivedRewards as $id => $unreceivedReward) {
+                    $type = $unreceivedReward["type"];
+                    $reward = $unreceivedReward["reward"];
 
                     // make sure the reward is removed from the db before giving the player the reward
-                    MagicCrates::getDatabase()->removeReceivedReward($id)
-                        ->onCompletion(function () use ($sender, $type, $typeId, $reward, $rewardId) {
+                    MagicCrates::getDatabase()->removeUnreceivedReward($id)
+                        ->onCompletion(function () use ($sender, $type, $reward) {
                             //  check if the player managed to log out before we got the responded
                             if ($sender->isConnected()) {
                                 // recheck if the player has enough inventory space,
                                 // as it is possible (but unlikely) that the inventory is filled during the time we had to wait
                                 if ($reward->canPlayerReceive($sender)) {
                                     // reward the player
+                                    $sender->sendMessage(MagicCrates::getPrefix() . " §aYou received reward §e" . $reward->getName());
                                     $type->rewardPlayer($sender, $reward);
                                     return;
                                 }
 
-                                $sender->sendMessage(MagicCrates::getPrefix() . " §cYour inventory is full, please clear your inventory to receive the reward $rewardId from crate " . $type->getName());
+                                $sender->sendMessage(MagicCrates::getPrefix() . " §cCould not receive reward {$reward->getName()}, your inventory is full. Please clear your inventory and try again.");
                             }
 
                             // the player could not receive the reward
                             // reinsert the reward in the database
-                            MagicCrates::getDatabase()->addReceivedReward($sender, $type, $reward);
+                            MagicCrates::getDatabase()->addUnreceivedReward($sender, $type, $reward);
                         }, function () use ($sender) {
                             $sender->sendMessage(MagicCrates::getPrefix() . " §cSomething went wrong.");
                         });
@@ -102,6 +93,11 @@ class ReceiveCommand extends BaseSubCommand
      */
     protected function prepare(): void
     {
+        /** @var MagicCrates $plugin */
+        $plugin = $this->getOwningPlugin();
+
+        $this->registerSubCommand(new ShowReceiveCommand($plugin, "show", "Show all the rewards you have not yet received."));
+
         $this->setPermission("magiccrates.cmd.receive");
         $this->addConstraint(new InGameRequiredConstraint($this));
     }

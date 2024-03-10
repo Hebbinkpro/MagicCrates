@@ -54,7 +54,7 @@ class DBController
     {
         $this->database->executeGeneric("table.crates");
         $this->database->executeGeneric("table.rewards");
-        $this->database->executeGeneric("table.receivedRewards");
+        $this->database->executeGeneric("table.unreceivedRewards");
     }
 
     /**
@@ -353,16 +353,16 @@ class DBController
     }
 
     /**
-     * Add a received reward for a player
+     * Add an unreceived reward for a player
      * @param Player|string $player
      * @param CrateType $type
      * @param CrateReward $reward
      * @return Promise
      */
-    public function addReceivedReward(Player|string $player, CrateType $type, CrateReward $reward): Promise
+    public function addUnreceivedReward(Player|string $player, CrateType $type, CrateReward $reward): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.received.addReward", [
+        $this->database->executeGeneric("data.unreceived.addReward", [
             "player" => is_string($player) ? $player : $player->getUniqueId()->getBytes(),
             "type" => $type->getId(),
             "reward" => $reward->getId()
@@ -377,17 +377,30 @@ class DBController
     }
 
     /**
-     * Get all the received rewards of a player
+     * Get all the unreceived rewards of a player
      * @param Player $player
-     * @return Promise<array<array{id: int, player: string, type: string, reward: string}>>
+     * @return Promise<array<int, array{type: CrateType, reward: CrateReward}>> list of all unreceived rewards with the unreceived reward id as key
      */
-    public function getReceivedRewards(Player $player): Promise
+    public function getUnreceivedRewards(Player $player): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeSelect("data.received.getRewards", [
+        $this->database->executeSelect("data.unreceived.getRewards", [
             "player" => $player->getUniqueId()->getBytes()
         ], function (array $rows) use ($promiseResolver) {
-            $promiseResolver->resolve($rows);
+            $rewards = [];
+            foreach ($rows as $row) {
+                $type = CrateType::getById($row["type"]);
+                if ($type === null) continue;
+                $reward = $type->getRewardById($row["reward"]);
+                if ($reward === null) continue;
+
+                $rewards[$row["id"]] = [
+                    "type" => $type,
+                    "reward" => $reward
+                ];
+            }
+
+            $promiseResolver->resolve($rewards);
         }, function (SqlError $error) use ($promiseResolver) {
             $this->plugin->getLogger()->warning($error->getErrorMessage());
             $promiseResolver->reject();
@@ -397,14 +410,14 @@ class DBController
     }
 
     /**
-     * Remove a received reward with the given ID
+     * Remove an unreceived reward
      * @param int $id
      * @return Promise
      */
-    public function removeReceivedReward(int $id): Promise
+    public function removeUnreceivedReward(int $id): Promise
     {
         $promiseResolver = new PromiseResolver();
-        $this->database->executeGeneric("data.received.removeReward", [
+        $this->database->executeGeneric("data.unreceived.removeReward", [
             "id" => $id
         ], function () use ($promiseResolver) {
             $promiseResolver->resolve(null);

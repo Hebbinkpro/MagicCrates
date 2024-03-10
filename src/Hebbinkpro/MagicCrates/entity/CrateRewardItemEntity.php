@@ -45,13 +45,15 @@ class CrateRewardItemEntity extends CrateItemEntity
             $player = Server::getInstance()->getPlayerByRawUUID($this->player);
 
             if ($player !== null && $this->reward->canPlayerReceive($player)) {
+                $player->sendMessage(MagicCrates::getPrefix() . " §aYou won §e" . $this->reward->getName());
                 $this->crate->getType()->rewardPlayer($player, $this->reward);
                 (new CrateRewardEvent($this->crate, $player, $this->reward))->call();
             } else {
-                $player?->sendMessage(MagicCrates::getPrefix() . " §cYou do not have enough inventory space to receive the rewards. Please clear your inventory and execute '/mc receive' to receive your rewards.");
+                $player?->sendMessage(MagicCrates::getPrefix() . " §aYou won §e" . $this->reward->getName());
+                $player?->sendMessage(MagicCrates::getPrefix() . " §cYou do not have enough inventory space to receive the reward. Please clear your inventory and execute '/mc receive' to receive your reward.");
 
                 // add the rewards of the player to the received rewards
-                MagicCrates::getDatabase()->addReceivedReward($this->player, $this->crate->getType(), $this->reward);
+                MagicCrates::getDatabase()->addUnreceivedReward($this->player, $this->crate->getType(), $this->reward);
             }
 
             // close the crate

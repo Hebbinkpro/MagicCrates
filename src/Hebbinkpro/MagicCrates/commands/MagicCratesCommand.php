@@ -22,7 +22,7 @@ namespace Hebbinkpro\MagicCrates\commands;
 use CortexPE\Commando\BaseCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\CreateCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\key\KeyCommand;
-use Hebbinkpro\MagicCrates\commands\subcommands\ReceiveCommand;
+use Hebbinkpro\MagicCrates\commands\subcommands\receive\ReceiveCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\RemoveCommand;
 use Hebbinkpro\MagicCrates\commands\subcommands\reward\RewardCommand;
 use Hebbinkpro\MagicCrates\MagicCrates;
