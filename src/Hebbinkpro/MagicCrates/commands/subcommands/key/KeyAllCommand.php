@@ -56,7 +56,7 @@ class KeyAllCommand extends BaseSubCommand
             $player->sendMessage(MagicCrates::getPrefix() . " §aYou have received §e$amount §e$typeName §r§ekey$s.");
         }
 
-        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players have received §6$amount §ee$typeName §r§ekey$s.");
+        $sender->sendMessage(MagicCrates::getPrefix() . " §eAll online players have received §6$amount §e$typeName §r§ekey$s.");
     }
 
     /**

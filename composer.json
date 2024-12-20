@@ -14,10 +14,8 @@
     "muqsit/simple-packet-handler": "dev-pm5",
     "vecnavium/formsui": "dev-master",
     "sof3/libasynql": "4.2.2",
-    "ifera-mc/config-updater": "dev-master"
-  },
-  "require-dev": {
-    "paroxity/commando": "dev-master"
+    "ifera-mc/config-updater": "dev-master",
+    "paroxity/commando": "^3.2.1"
   },
   "autoload": {
     "psr-4": {
@@ -25,18 +23,6 @@
     }
   },
   "repositories": {
-    "commando": {
-      "type": "package",
-      "package": {
-        "name": "paroxity/commando",
-        "version": "dev-master",
-        "source": {
-          "url": "https://github.com/Paroxity/Commando.git",
-          "type": "git",
-          "reference": "master"
-        }
-      }
-    },
     "config-updater": {
       "type": "package",
       "package": {
