@@ -20,6 +20,7 @@
 namespace Hebbinkpro\MagicCrates\utils;
 
 use pocketmine\inventory\Inventory;
+use pocketmine\inventory\SimpleInventory;
 use pocketmine\item\Item;
 
 class InventoryUtils
@@ -32,8 +33,9 @@ class InventoryUtils
      */
     public static function canAddItems(Inventory $inventory, array $items): bool
     {
-        // clone the inventory
-        $testInventory = clone $inventory;
+        // create a new inventory with the exact same contents as the player
+        $testInventory = new SimpleInventory($inventory->getSize());
+        $testInventory->setContents($inventory->getContents(true));
 
         // add the items to the cloned inventory
         $leftOver = $testInventory->addItem(...$items);
