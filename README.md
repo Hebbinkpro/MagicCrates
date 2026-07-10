@@ -1,5 +1,10 @@
 # MagicCrates [![](https://poggit.pmmp.io/shield.downloads/MagicCrates)](https://poggit.pmmp.io/p/MagicCrates)
 
+> [!IMPORTANT]
+> This plugin has been archived and will no longer receive updates.
+> Since PocketMine-MP has reached end-of-support, development of MagicCrates has been discontinued.
+> Thank you to everyone who used this project over the years.
+
 Add customizable crates to your server.
 
 - Add as many crate types as you want
